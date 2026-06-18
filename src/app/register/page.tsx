@@ -1,9 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -11,16 +16,24 @@ export default function Register() {
   const [nome, setNome] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const router = useRouter()
 
   const handleRegister = async () => {
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { nome }
+      }
+    })
     if (error) {
-      setError('Errore durante la registrazione')
+      setError('Errore durante la registrazione: ' + error.message)
     } else {
-      router.push('/dashboard')
+      setSuccess(true)
+      setTimeout(() => router.push('/dashboard'), 2000)
     }
     setLoading(false)
   }
@@ -31,6 +44,7 @@ export default function Register() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Crea il tuo account</h1>
         <p className="text-gray-500 mb-6">Unisciti a migliaia di studenti su StudyNotes</p>
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {success && <p className="text-green-500 text-sm mb-4">Account creato! Reindirizzamento...</p>}
         <input
           type="text"
           placeholder="Il tuo nome"
@@ -47,7 +61,7 @@ export default function Register() {
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Password (minimo 6 caratteri)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
