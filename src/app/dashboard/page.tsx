@@ -1,9 +1,27 @@
+'use client'
+
+import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function Dashboard() {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
         <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button className="text-sm text-gray-500 hover:text-red-500">Esci</button>
+        <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">Esci</button>
       </nav>
       <div className="max-w-6xl mx-auto px-8 py-10">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Benvenuto! 👋</h1>
@@ -26,20 +44,20 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer">
+          <Link href="/upload" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
             <div className="text-3xl mb-4">📝</div>
             <h3 className="font-semibold text-gray-900 mb-2">Carica appunti</h3>
             <p className="text-sm text-gray-500">Vendi i tuoi appunti e guadagna</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer">
+          </Link>
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 opacity-50">
             <div className="text-3xl mb-4">🤖</div>
             <h3 className="font-semibold text-gray-900 mb-2">Genera quiz AI</h3>
-            <p className="text-sm text-gray-500">Carica un PDF e studia con l&apos;AI</p>
+            <p className="text-sm text-gray-500">Prossimamente</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 opacity-50">
             <div className="text-3xl mb-4">🎓</div>
             <h3 className="font-semibold text-gray-900 mb-2">Prenota ripetizione</h3>
-            <p className="text-sm text-gray-500">Trova un tutor nella tua materia</p>
+            <p className="text-sm text-gray-500">Prossimamente</p>
           </div>
         </div>
       </div>
