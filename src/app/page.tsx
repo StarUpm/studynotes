@@ -1,54 +1,136 @@
-export default function Home() {
+'use client'
+
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+
+export default function Upload() {
+  const [titolo, setTitolo] = useState('')
+  const [descrizione, setDescrizione] = useState('')
+  const [materia, setMateria] = useState('')
+  const [universita, setUniversita] = useState('')
+  const [prezzo, setPrezzo] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const router = useRouter()
+
+  const handleUpload = async () => {
+    if (!file) {
+      setError('Seleziona un file PDF')
+      return
+    }
+    setLoading(true)
+    setError('')
+
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) {
+      setError('Devi accedere prima di caricare appunti')
+      setLoading(false)
+      return
+    }
+
+    const fileName = `${Date.now()}_${file.name}`
+    const { error: uploadError } = await supabase.storage
+      .from('appunti')
+      .upload(fileName, file)
+
+    if (uploadError) {
+      setError('Errore nel caricamento del file: ' + uploadError.message)
+      setLoading(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('appunti')
+      .getPublicUrl(fileName)
+
+    const { error: dbError } = await supabase.from('notes').insert({
+      titolo,
+      descrizione,
+      materia,
+      universita,
+      prezzo: parseFloat(prezzo) || 0,
+      file_url: urlData.publicUrl,
+      autore_id: userData.user.id
+    })
+
+    if (dbError) {
+      setError('Errore nel salvataggio: ' + dbError.message)
+    } else {
+      setSuccess(true)
+      setTimeout(() => router.push('/dashboard'), 1500)
+    }
+    setLoading(false)
+  }
+
   return (
-    <main className="min-h-screen bg-white">
-      <nav className="flex items-center justify-between px-8 py-4 border-b border-gray-100">
+    <main className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
         <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <div className="flex gap-4">
-          <button className="text-gray-600 hover:text-blue-600 text-sm">Accedi</button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-            Registrati gratis
-          </button>
-        </div>
+        <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-500 hover:text-blue-600">
+          Torna alla dashboard
+        </button>
       </nav>
+      <div className="max-w-xl mx-auto px-8 py-10">
+        <div className="bg-white rounded-2xl border border-gray-100 p-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Carica i tuoi appunti</h1>
+          <p className="text-gray-500 mb-6">Condividi e guadagna con i tuoi appunti</p>
 
-      <section className="flex flex-col items-center justify-center text-center px-4 py-24">
-        <span className="bg-blue-50 text-blue-600 text-sm px-4 py-1 rounded-full mb-6">
-          📚 La piattaforma degli studenti italiani
-        </span>
-        <h1 className="text-5xl font-bold text-gray-900 max-w-3xl leading-tight mb-6">
-          Condividi appunti, studia con l&apos;AI, trova il tuo tutor
-        </h1>
-        <p className="text-xl text-gray-500 max-w-xl mb-10">
-          Carica i tuoi appunti, guadagna vendendo quelli che non usi,
-          e lascia che l&apos;AI crei quiz e flashcard per te.
-        </p>
-        <div className="flex gap-4">
-          <button className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700">
-            Inizia gratis
-          </button>
-          <button className="border border-gray-200 text-gray-700 px-8 py-3 rounded-lg text-lg hover:bg-gray-50">
-            Scopri come funziona
-          </button>
-        </div>
-      </section>
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {success && <p className="text-green-500 text-sm mb-4">Appunti caricati con successo!</p>}
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 px-16 py-16 bg-gray-50">
-        <div className="bg-white p-8 rounded-2xl border border-gray-100">
-          <div className="text-3xl mb-4">📝</div>
-          <h3 className="text-lg font-semibold mb-2">Vendi i tuoi appunti</h3>
-          <p className="text-gray-500 text-sm">Carica i tuoi appunti e guadagna ogni volta che qualcuno li scarica.</p>
+          <input
+            type="text"
+            placeholder="Titolo (es. Analisi Matematica 1 - Limiti)"
+            value={titolo}
+            onChange={(e) => setTitolo(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
+          />
+          <textarea
+            placeholder="Descrizione"
+            value={descrizione}
+            onChange={(e) => setDescrizione(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
+            rows={3}
+          />
+          <input
+            type="text"
+            placeholder="Materia (es. Matematica)"
+            value={materia}
+            onChange={(e) => setMateria(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Universita"
+            value={universita}
+            onChange={(e) => setUniversita(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
+          />
+          <input
+            type="number"
+            placeholder="Prezzo in euro (0 per gratis)"
+            value={prezzo}
+            onChange={(e) => setPrezzo(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
+          />
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm"
+          />
+          <button
+            onClick={handleUpload}
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'Caricamento in corso...' : 'Pubblica appunti'}
+          </button>
         </div>
-        <div className="bg-white p-8 rounded-2xl border border-gray-100">
-          <div className="text-3xl mb-4">🤖</div>
-          <h3 className="text-lg font-semibold mb-2">AI che studia con te</h3>
-          <p className="text-gray-500 text-sm">Carica un PDF e l&apos;AI genera quiz, flashcard e schemi in automatico.</p>
-        </div>
-        <div className="bg-white p-8 rounded-2xl border border-gray-100">
-          <div className="text-3xl mb-4">🎓</div>
-          <h3 className="text-lg font-semibold mb-2">Ripetizioni online</h3>
-          <p className="text-gray-500 text-sm">Prenota videochiamate con studenti più esperti nella tua materia.</p>
-        </div>
-      </section>
+      </div>
     </main>
   )
 }
