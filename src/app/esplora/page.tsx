@@ -24,13 +24,9 @@ export default function Esplora() {
 
   useEffect(() => {
     const fetchNotes = async () => {
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error && data) {
-        setNotes(data)
+      const result = await supabase.from('notes').select('*').order('created_at', { ascending: false })
+      if (result.data) {
+        setNotes(result.data)
       }
       setLoading(false)
     }
@@ -39,18 +35,25 @@ export default function Esplora() {
 
   const filteredNotes = notes.filter(function (note) {
     const s = search.toLowerCase()
-    return (
-      note.titolo.toLowerCase().includes(s) ||
-      note.materia.toLowerCase().includes(s) ||
-      note.universita.toLowerCase().includes(s)
-    )
+    const t = note.titolo.toLowerCase().includes(s)
+    const m = note.materia.toLowerCase().includes(s)
+    const u = note.universita.toLowerCase().includes(s)
+    return t || m || u
   })
+
+  function goToDashboard() {
+    router.push('/dashboard')
+  }
+
+  function updateSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    setSearch(e.target.value)
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
         <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={function () { router.push('/dashboard') }} className="text-sm text-gray-500 hover:text-blue-600">
+        <button onClick={goToDashboard} className="text-sm text-gray-500 hover:text-blue-600">
           Torna alla dashboard
         </button>
       </nav>
@@ -62,37 +65,26 @@ export default function Esplora() {
           type="text"
           placeholder="Cerca per titolo, materia o universita..."
           value={search}
-          onChange={function (e) { setSearch(e.target.value) }}
+          onChange={updateSearch}
           className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-8 text-sm focus:outline-none focus:border-blue-500 max-w-xl"
         />
 
-        {loading ? <p className="text-gray-500">Caricamento...</p> : null}
-
-        {!loading && filteredNotes.length === 0 ? (
-          <p className="text-gray-500">Nessun appunto trovato</p>
-        ) : null}
+        {loading && <p className="text-gray-500">Caricamento...</p>}
+        {!loading && filteredNotes.length === 0 && <p className="text-gray-500">Nessun appunto trovato</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredNotes.map(function (note) {
+            const prezzoLabel = note.prezzo > 0 ? ('Euro ' + note.prezzo) : 'Gratis'
             return (
               <div key={note.id} className="bg-white rounded-2xl border border-gray-100 p-6">
                 <div className="flex justify-between items-start mb-3">
-                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-full">
-                    {note.materia}
-                  </span>
-                  <span className="font-bold text-gray-900">
-                    {note.prezzo > 0 ? '€' + note.prezzo : 'Gratis'}
-                  </span>
+                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-full">{note.materia}</span>
+                  <span className="font-bold text-gray-900">{prezzoLabel}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">{note.titolo}</h3>
                 <p className="text-sm text-gray-500 mb-3">{note.descrizione}</p>
                 <p className="text-xs text-gray-400 mb-4">{note.universita}</p>
-                
-                  href={note.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 block text-center"
-                >
+                <a href={note.file_url} className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 block text-center">
                   Scarica PDF
                 </a>
               </div>
