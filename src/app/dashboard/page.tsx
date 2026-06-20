@@ -18,6 +18,7 @@ export default function Dashboard() {
         <span className="text-xl font-bold text-blue-600">StudyNotes</span>
         <div className="flex gap-4 items-center">
           <Link href="/esplora" className="text-sm text-gray-500 hover:text-blue-600">Esplora appunti</Link>
+          <Link href="/tutor" className="text-sm text-gray-500 hover:text-blue-600">Trova tutor</Link>
           <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">Esci</button>
         </div>
       </nav>
@@ -41,7 +42,7 @@ export default function Dashboard() {
             <p className="text-3xl font-bold text-gray-900">0</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Link href="/upload" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
             <div className="text-3xl mb-4">📝</div>
             <h3 className="font-semibold text-gray-900 mb-2">Carica appunti</h3>
@@ -56,6 +57,18 @@ export default function Dashboard() {
             <div className="text-3xl mb-4">🤖</div>
             <h3 className="font-semibold text-gray-900 mb-2">Genera quiz AI</h3>
             <p className="text-sm text-gray-500">Crea quiz dai tuoi appunti</p>
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="/tutor" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
+            <div className="text-3xl mb-4">🎓</div>
+            <h3 className="font-semibold text-gray-900 mb-2">Trova un tutor</h3>
+            <p className="text-sm text-gray-500">Prenota ripetizioni online</p>
+          </Link>
+          <Link href="/diventa-tutor" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
+            <div className="text-3xl mb-4">👨‍🏫</div>
+            <h3 className="font-semibold text-gray-900 mb-2">Diventa tutor</h3>
+            <p className="text-sm text-gray-500">Offri ripetizioni e guadagna</p>
           </Link>
         </div>
       </div>
