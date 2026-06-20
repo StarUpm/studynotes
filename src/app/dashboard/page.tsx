@@ -52,11 +52,11 @@ export default function Dashboard() {
             <h3 className="font-semibold text-gray-900 mb-2">Esplora appunti</h3>
             <p className="text-sm text-gray-500">Trova appunti di altri studenti</p>
           </Link>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 opacity-50">
+          <Link href="/quiz" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
             <div className="text-3xl mb-4">🤖</div>
             <h3 className="font-semibold text-gray-900 mb-2">Genera quiz AI</h3>
-            <p className="text-sm text-gray-500">Prossimamente</p>
-          </div>
+            <p className="text-sm text-gray-500">Crea quiz dai tuoi appunti</p>
+          </Link>
         </div>
       </div>
     </main>
