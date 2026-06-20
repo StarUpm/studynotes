@@ -111,7 +111,8 @@ export default function Upload() {
           />
           <input
             type="number"
-            placeholder="Prezzo in euro (0 per gratis)"
+            step="0.01"
+            placeholder="Prezzo in euro (es. 9.75, 0 per gratis)"
             value={prezzo}
             onChange={(e) => setPrezzo(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
