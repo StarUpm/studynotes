@@ -11,7 +11,8 @@ type Domanda = {
 }
 
 export default function Quiz() {
-  const [testo, setTesto] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [testoManuale, setTestoManuale] = useState('')
   const [quiz, setQuiz] = useState<Domanda[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -23,12 +24,16 @@ export default function Quiz() {
   }
 
   function updateTesto(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setTesto(e.target.value)
+    setTestoManuale(e.target.value)
+  }
+
+  function updateFile(e: React.ChangeEvent<HTMLInputElement>) {
+    setFile(e.target.files ? e.target.files[0] : null)
   }
 
   async function generaQuiz() {
-    if (testo.length < 50) {
-      setError('Inserisci almeno 50 caratteri di appunti')
+    if (!file && testoManuale.length < 50) {
+      setError('Carica un PDF oppure inserisci almeno 50 caratteri di testo')
       return
     }
     setLoading(true)
@@ -37,17 +42,23 @@ export default function Quiz() {
     setRispostePresenti([])
 
     try {
+      const formData = new FormData()
+      if (file) {
+        formData.append('file', file)
+      } else {
+        formData.append('testo', testoManuale)
+      }
+
       const response = await fetch('/api/generate-quiz', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testo: testo })
+        body: formData
       })
       const data = await response.json()
       if (data.quiz) {
         setQuiz(data.quiz)
         setRispostePresenti(new Array(data.quiz.length).fill(-1))
       } else {
-        setError('Errore nella generazione del quiz')
+        setError(data.error || 'Errore nella generazione del quiz')
       }
     } catch (e) {
       setError('Errore di connessione')
@@ -71,17 +82,30 @@ export default function Quiz() {
       </nav>
       <div className="max-w-3xl mx-auto px-8 py-10">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Genera quiz con AI</h1>
-        <p className="text-gray-500 mb-6">Incolla i tuoi appunti e l&apos;AI creera un quiz per ripassare</p>
+        <p className="text-gray-500 mb-6">Carica un PDF oppure incolla il testo per generare un quiz</p>
 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        <textarea
-          placeholder="Incolla qui il testo dei tuoi appunti..."
-          value={testo}
-          onChange={updateTesto}
-          rows={8}
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
-        />
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">Opzione 1: Carica un PDF</p>
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={updateFile}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-2 text-sm"
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">Opzione 2: Incolla il testo</p>
+          <textarea
+            placeholder="Incolla qui il testo dei tuoi appunti..."
+            value={testoManuale}
+            onChange={updateTesto}
+            rows={6}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+          />
+        </div>
 
         <button
           onClick={generaQuiz}
