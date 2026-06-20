@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { materie } from '@/lib/dati-universita'
 
 type Tutor = {
   id: string
@@ -16,6 +17,7 @@ export default function Tutor() {
   const [tutors, setTutors] = useState<Tutor[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [suggerimenti, setSuggerimenti] = useState<string[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -30,13 +32,28 @@ export default function Tutor() {
   }, [])
 
   const filteredTutors = tutors.filter(function (t) {
+    if (search.length === 0) return true
     const s = search.toLowerCase()
-    const materie = t.materie_insegnate ? t.materie_insegnate.toLowerCase() : ''
-    return materie.includes(s)
+    const m = t.materie_insegnate ? t.materie_insegnate.toLowerCase() : ''
+    return m.includes(s)
   })
 
   function updateSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearch(e.target.value)
+    const valore = e.target.value
+    setSearch(valore)
+    if (valore.length > 0) {
+      const filtrati = materie.filter(function (m) {
+        return m.toLowerCase().includes(valore.toLowerCase())
+      })
+      setSuggerimenti(filtrati.slice(0, 6))
+    } else {
+      setSuggerimenti([])
+    }
+  }
+
+  function selezionaSuggerimento(valore: string) {
+    setSearch(valore)
+    setSuggerimenti([])
   }
 
   function goToDashboard() {
@@ -59,13 +76,30 @@ export default function Tutor() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Trova un tutor</h1>
         <p className="text-gray-500 mb-6">Prenota ripetizioni online con altri studenti</p>
 
-        <input
-          type="text"
-          placeholder="Cerca per materia..."
-          value={search}
-          onChange={updateSearch}
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-8 text-sm focus:outline-none focus:border-blue-500 max-w-xl"
-        />
+        <div className="relative mb-8 max-w-xl">
+          <input
+            type="text"
+            placeholder="Cerca per materia..."
+            value={search}
+            onChange={updateSearch}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+          />
+          {suggerimenti.length > 0 && (
+            <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
+              {suggerimenti.map(function (s, i) {
+                return (
+                  <button
+                    key={i}
+                    onClick={function () { selezionaSuggerimento(s) }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
+                  >
+                    {s}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
         {loading && <p className="text-gray-500">Caricamento...</p>}
         {!loading && filteredTutors.length === 0 && <p className="text-gray-500">Nessun tutor trovato</p>}
