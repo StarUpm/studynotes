@@ -87,7 +87,7 @@ export default function DiventaTutor() {
             onChange={updateMaterie}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
           />
-          <input
+         <input
             type="number"
             step="0.01"
             placeholder="Tariffa oraria"
