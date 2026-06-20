@@ -16,7 +16,10 @@ export default function Dashboard() {
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
         <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">Esci</button>
+        <div className="flex gap-4 items-center">
+          <Link href="/esplora" className="text-sm text-gray-500 hover:text-blue-600">Esplora appunti</Link>
+          <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">Esci</button>
+        </div>
       </nav>
       <div className="max-w-6xl mx-auto px-8 py-10">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Benvenuto! 👋</h1>
@@ -44,14 +47,14 @@ export default function Dashboard() {
             <h3 className="font-semibold text-gray-900 mb-2">Carica appunti</h3>
             <p className="text-sm text-gray-500">Vendi i tuoi appunti e guadagna</p>
           </Link>
+          <Link href="/esplora" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
+            <div className="text-3xl mb-4">🔍</div>
+            <h3 className="font-semibold text-gray-900 mb-2">Esplora appunti</h3>
+            <p className="text-sm text-gray-500">Trova appunti di altri studenti</p>
+          </Link>
           <div className="bg-white rounded-2xl border border-gray-100 p-6 opacity-50">
             <div className="text-3xl mb-4">🤖</div>
             <h3 className="font-semibold text-gray-900 mb-2">Genera quiz AI</h3>
-            <p className="text-sm text-gray-500">Prossimamente</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 opacity-50">
-            <div className="text-3xl mb-4">🎓</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Prenota ripetizione</h3>
             <p className="text-sm text-gray-500">Prossimamente</p>
           </div>
         </div>
