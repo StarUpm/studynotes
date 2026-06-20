@@ -3,18 +3,57 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { universita, materie } from '@/lib/dati-universita'
 
 export default function Upload() {
   const [titolo, setTitolo] = useState('')
   const [descrizione, setDescrizione] = useState('')
   const [materia, setMateria] = useState('')
-  const [universita, setUniversita] = useState('')
+  const [universitaSelezionata, setUniversitaSelezionata] = useState('')
   const [prezzo, setPrezzo] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [suggerimentiMateria, setSuggerimentiMateria] = useState<string[]>([])
+  const [suggerimentiUniversita, setSuggerimentiUniversita] = useState<string[]>([])
   const router = useRouter()
+
+  function updateMateria(e: React.ChangeEvent<HTMLInputElement>) {
+    const valore = e.target.value
+    setMateria(valore)
+    if (valore.length > 0) {
+      const filtrati = materie.filter(function (m) {
+        return m.toLowerCase().includes(valore.toLowerCase())
+      })
+      setSuggerimentiMateria(filtrati.slice(0, 6))
+    } else {
+      setSuggerimentiMateria([])
+    }
+  }
+
+  function selezionaMateria(valore: string) {
+    setMateria(valore)
+    setSuggerimentiMateria([])
+  }
+
+  function updateUniversita(e: React.ChangeEvent<HTMLInputElement>) {
+    const valore = e.target.value
+    setUniversitaSelezionata(valore)
+    if (valore.length > 0) {
+      const filtrati = universita.filter(function (u) {
+        return u.toLowerCase().includes(valore.toLowerCase())
+      })
+      setSuggerimentiUniversita(filtrati.slice(0, 6))
+    } else {
+      setSuggerimentiUniversita([])
+    }
+  }
+
+  function selezionaUniversita(valore: string) {
+    setUniversitaSelezionata(valore)
+    setSuggerimentiUniversita([])
+  }
 
   const handleUpload = async () => {
     if (!file) {
@@ -50,7 +89,7 @@ export default function Upload() {
       titolo,
       descrizione,
       materia,
-      universita,
+      universita: universitaSelezionata,
       prezzo: parseFloat(prezzo) || 0,
       file_url: urlData.publicUrl,
       autore_id: userData.user.id
@@ -95,24 +134,61 @@ export default function Upload() {
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
             rows={3}
           />
-          <input
-            type="text"
-            placeholder="Materia (es. Matematica)"
-            value={materia}
-            onChange={(e) => setMateria(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <input
-            type="text"
-            placeholder="Universita"
-            value={universita}
-            onChange={(e) => setUniversita(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
+
+          <div className="relative mb-3">
+            <input
+              type="text"
+              placeholder="Materia (es. Analisi Matematica 1)"
+              value={materia}
+              onChange={updateMateria}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+            />
+            {suggerimentiMateria.length > 0 && (
+              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
+                {suggerimentiMateria.map(function (s, i) {
+                  return (
+                    <button
+                      key={i}
+                      onClick={function () { selezionaMateria(s) }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="relative mb-3">
+            <input
+              type="text"
+              placeholder="Universita"
+              value={universitaSelezionata}
+              onChange={updateUniversita}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+            />
+            {suggerimentiUniversita.length > 0 && (
+              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
+                {suggerimentiUniversita.map(function (s, i) {
+                  return (
+                    <button
+                      key={i}
+                      onClick={function () { selezionaUniversita(s) }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           <input
             type="number"
             step="0.01"
-            placeholder="Prezzo"
+            placeholder="Prezzo in euro (es. 9.75, 0 per gratis)"
             value={prezzo}
             onChange={(e) => setPrezzo(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
