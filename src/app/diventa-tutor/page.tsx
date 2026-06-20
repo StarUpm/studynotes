@@ -82,7 +82,7 @@ export default function DiventaTutor() {
 
           <input
             type="text"
-            placeholder="Materie che insegni (es. Matematica, Fisica)"
+            placeholder="Materia"
             value={materieInsegnate}
             onChange={updateMaterie}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
@@ -90,7 +90,7 @@ export default function DiventaTutor() {
           <input
             type="number"
             step="0.01"
-            placeholder="Tariffa oraria in euro (es. 15.00)"
+            placeholder="Tariffa oraria"
             value={tariffa}
             onChange={updateTariffa}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
