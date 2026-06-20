@@ -122,7 +122,7 @@ export default function Upload() {
 
           <input
             type="text"
-            placeholder="Titolo (es. Analisi Matematica 1 - Limiti)"
+            placeholder="Titolo"
             value={titolo}
             onChange={(e) => setTitolo(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
@@ -138,7 +138,7 @@ export default function Upload() {
           <div className="relative mb-3">
             <input
               type="text"
-              placeholder="Materia (es. Analisi Matematica 1)"
+              placeholder="Materia"
               value={materia}
               onChange={updateMateria}
               className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
@@ -188,7 +188,7 @@ export default function Upload() {
           <input
             type="number"
             step="0.01"
-            placeholder="Prezzo in euro (es. 9.75, 0 per gratis)"
+            placeholder="Prezzo"
             value={prezzo}
             onChange={(e) => setPrezzo(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
