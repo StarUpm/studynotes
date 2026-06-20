@@ -20,6 +20,7 @@ export default function Esplora() {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [acquistoInCorso, setAcquistoInCorso] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -49,6 +50,45 @@ export default function Esplora() {
     setSearch(e.target.value)
   }
 
+  async function gestisciAcquisto(note: Note) {
+    if (note.prezzo === 0) {
+      window.open(note.file_url, '_blank')
+      return
+    }
+
+    setAcquistoInCorso(note.id)
+    const userData = await supabase.auth.getUser()
+    if (!userData.data.user) {
+      alert('Devi accedere prima di acquistare')
+      setAcquistoInCorso('')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          noteId: note.id,
+          titolo: note.titolo,
+          prezzo: note.prezzo,
+          fileUrl: note.file_url,
+          buyerId: userData.data.user.id
+        })
+      })
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert('Errore nella creazione del pagamento')
+        setAcquistoInCorso('')
+      }
+    } catch (e) {
+      alert('Errore di connessione')
+      setAcquistoInCorso('')
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
@@ -74,7 +114,8 @@ export default function Esplora() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredNotes.map(function (note) {
-            const prezzoLabel = note.prezzo > 0 ? ('Euro ' + note.prezzo) : 'Gratis'
+            const prezzoLabel = note.prezzo > 0 ? ('€ ' + note.prezzo.toFixed(2)) : 'Gratis'
+            const inCorso = acquistoInCorso === note.id
             return (
               <div key={note.id} className="bg-white rounded-2xl border border-gray-100 p-6">
                 <div className="flex justify-between items-start mb-3">
@@ -84,9 +125,13 @@ export default function Esplora() {
                 <h3 className="font-semibold text-gray-900 mb-1">{note.titolo}</h3>
                 <p className="text-sm text-gray-500 mb-3">{note.descrizione}</p>
                 <p className="text-xs text-gray-400 mb-4">{note.universita}</p>
-                <a href={note.file_url} className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 block text-center">
-                  Scarica PDF
-                </a>
+                <button
+                  onClick={function () { gestisciAcquisto(note) }}
+                  disabled={inCorso}
+                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {inCorso ? 'Caricamento...' : (note.prezzo > 0 ? 'Acquista e scarica' : 'Scarica gratis')}
+                </button>
               </div>
             )
           })}
