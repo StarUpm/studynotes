@@ -10,13 +10,15 @@ export async function GET() {
       },
       body: JSON.stringify({
         url: process.env.NEXT_PUBLIC_SITE_URL + '/api/daily-webhook',
-        eventTypes: ['participant.joined', 'participant.left']
+        eventTypes: ['participant.joined', 'participant.left'],
+        domain: 'cloud-59eb478ffb2841e9b707e8321386be08'
       })
     })
 
     const data = await response.json()
-    return NextResponse.json(data)
+    const status = response.status
+    return NextResponse.json({ status: status, data: data })
   } catch (error) {
-    return NextResponse.json({ error: 'Errore nella registrazione webhook' }, { status: 500 })
+    return NextResponse.json({ error: 'Errore: ' + String(error) }, { status: 500 })
   }
 }
