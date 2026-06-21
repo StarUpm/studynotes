@@ -20,45 +20,74 @@ export default function Sessioni() {
   const [sessioniComeStudente, setSessioniComeStudente] = useState<Sessione[]>([])
   const [sessioniComeTutor, setSessioniComeTutor] = useState<Sessione[]>([])
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState('')
+  const [creazioneInCorso, setCreazioneInCorso] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    async function fetchSessioni() {
-      const userData = await supabase.auth.getUser()
-      if (!userData.data.user) {
-        setLoading(false)
-        return
-      }
-      setUserId(userData.data.user.id)
-
-      const comeStudente = await supabase
-        .from('tutoring_sessions')
-        .select('*')
-        .eq('studente_id', userData.data.user.id)
-        .order('data_ora', { ascending: true })
-
-      const comeTutor = await supabase
-        .from('tutoring_sessions')
-        .select('*')
-        .eq('tutor_id', userData.data.user.id)
-        .order('data_ora', { ascending: true })
-
-      if (comeStudente.data) setSessioniComeStudente(comeStudente.data)
-      if (comeTutor.data) setSessioniComeTutor(comeTutor.data)
-      setLoading(false)
-    }
     fetchSessioni()
   }, [])
 
+  async function fetchSessioni() {
+    const userData = await supabase.auth.getUser()
+    if (!userData.data.user) {
+      setLoading(false)
+      return
+    }
+
+    const comeStudente = await supabase
+      .from('tutoring_sessions')
+      .select('*')
+      .eq('studente_id', userData.data.user.id)
+      .order('data_ora', { ascending: true })
+
+    const comeTutor = await supabase
+      .from('tutoring_sessions')
+      .select('*')
+      .eq('tutor_id', userData.data.user.id)
+      .order('data_ora', { ascending: true })
+
+    if (comeStudente.data) setSessioniComeStudente(comeStudente.data)
+    if (comeTutor.data) setSessioniComeTutor(comeTutor.data)
+    setLoading(false)
+  }
+
   async function confermaSessione(sessioneId: string) {
     await supabase.from('tutoring_sessions').update({ stato: 'confermata' }).eq('id', sessioneId)
-    window.location.reload()
+    fetchSessioni()
   }
 
   async function rifiutaSessione(sessioneId: string) {
     await supabase.from('tutoring_sessions').update({ stato: 'rifiutata' }).eq('id', sessioneId)
-    window.location.reload()
+    fetchSessioni()
+  }
+
+  async function entraInVideochiamata(sessione: Sessione) {
+    if (sessione.link_videochiamata) {
+      window.open(sessione.link_videochiamata, '_blank')
+      return
+    }
+
+    setCreazioneInCorso(sessione.id)
+
+    try {
+      const response = await fetch('/api/create-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessioneId: sessione.id })
+      })
+      const data = await response.json()
+
+      if (data.url) {
+        await supabase.from('tutoring_sessions').update({ link_videochiamata: data.url }).eq('id', sessione.id)
+        window.open(data.url, '_blank')
+        fetchSessioni()
+      } else {
+        alert('Errore nella creazione della videochiamata')
+      }
+    } catch (e) {
+      alert('Errore di connessione')
+    }
+    setCreazioneInCorso('')
   }
 
   function goToDashboard() {
@@ -93,6 +122,7 @@ export default function Sessioni() {
         {sessioniComeStudente.length === 0 && <p className="text-gray-500 mb-8">Nessuna sessione prenotata</p>}
         <div className="space-y-3 mb-10">
           {sessioniComeStudente.map(function (s) {
+            const inCorso = creazioneInCorso === s.id
             return (
               <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex justify-between items-center">
                 <div>
@@ -100,7 +130,17 @@ export default function Sessioni() {
                   <p className="text-sm text-gray-500">{formattaData(s.data_ora)}</p>
                   <p className="text-sm text-gray-500">€ {s.prezzo.toFixed(2)}</p>
                 </div>
-                <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
+                {s.stato === 'confermata' ? (
+                  <button
+                    onClick={function () { entraInVideochiamata(s) }}
+                    disabled={inCorso}
+                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {inCorso ? 'Creazione...' : 'Entra in videochiamata'}
+                  </button>
+                ) : (
+                  <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
+                )}
               </div>
             )
           })}
@@ -110,6 +150,7 @@ export default function Sessioni() {
         {sessioniComeTutor.length === 0 && <p className="text-gray-500">Nessuna richiesta ricevuta</p>}
         <div className="space-y-3">
           {sessioniComeTutor.map(function (s) {
+            const inCorso = creazioneInCorso === s.id
             return (
               <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex justify-between items-center">
                 <div>
@@ -126,6 +167,14 @@ export default function Sessioni() {
                       Rifiuta
                     </button>
                   </div>
+                ) : s.stato === 'confermata' ? (
+                  <button
+                    onClick={function () { entraInVideochiamata(s) }}
+                    disabled={inCorso}
+                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {inCorso ? 'Creazione...' : 'Entra in videochiamata'}
+                  </button>
                 ) : (
                   <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
                 )}
