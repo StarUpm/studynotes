@@ -14,6 +14,8 @@ type Note = {
   file_url: string
   downloads: number
   created_at: string
+  votoMedio: number
+  numeroRecensioni: number
 }
 
 export default function Esplora() {
@@ -26,8 +28,24 @@ export default function Esplora() {
   useEffect(() => {
     const fetchNotes = async () => {
       const result = await supabase.from('notes').select('*').order('created_at', { ascending: false })
+      const recensioniResult = await supabase.from('reviews').select('*')
+
       if (result.data) {
-        setNotes(result.data)
+        const noteConVoti = result.data.map(function (n) {
+          const recensioniNota = recensioniResult.data ? recensioniResult.data.filter(function (r) {
+            return r.note_id === n.id
+          }) : []
+          const numeroRecensioni = recensioniNota.length
+          let votoMedio = 0
+          if (numeroRecensioni > 0) {
+            const somma = recensioniNota.reduce(function (acc, r) {
+              return acc + r.voto
+            }, 0)
+            votoMedio = somma / numeroRecensioni
+          }
+          return Object.assign({}, n, { votoMedio: votoMedio, numeroRecensioni: numeroRecensioni })
+        })
+        setNotes(noteConVoti)
       }
       setLoading(false)
     }
@@ -48,6 +66,18 @@ export default function Esplora() {
 
   function updateSearch(e: React.ChangeEvent<HTMLInputElement>) {
     setSearch(e.target.value)
+  }
+
+  function vaiARecensione(noteId: string) {
+    router.push('/recensione-appunto/' + noteId)
+  }
+
+  function renderStelle(voto: number) {
+    const stelle = []
+    for (let i = 1; i <= 5; i++) {
+      stelle.push(i <= Math.round(voto) ? '★' : '☆')
+    }
+    return stelle.join('')
   }
 
   async function gestisciAcquisto(note: Note) {
@@ -123,14 +153,23 @@ export default function Esplora() {
                   <span className="font-bold text-gray-900">{prezzoLabel}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">{note.titolo}</h3>
-                <p className="text-sm text-gray-500 mb-3">{note.descrizione}</p>
-                <p className="text-xs text-gray-400 mb-4">{note.universita}</p>
+                <p className="text-sm text-gray-500 mb-2">{note.descrizione}</p>
+                <p className="text-xs text-gray-400 mb-2">{note.universita}</p>
+                <p className="text-yellow-400 text-sm mb-4">
+                  {renderStelle(note.votoMedio)} <span className="text-gray-400">({note.numeroRecensioni})</span>
+                </p>
                 <button
                   onClick={function () { gestisciAcquisto(note) }}
                   disabled={inCorso}
-                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-2"
                 >
                   {inCorso ? 'Caricamento...' : (note.prezzo > 0 ? 'Acquista e scarica' : 'Scarica gratis')}
+                </button>
+                <button
+                  onClick={function () { vaiARecensione(note.id) }}
+                  className="w-full border border-gray-200 text-gray-600 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
+                >
+                  Lascia una recensione
                 </button>
               </div>
             )
