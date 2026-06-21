@@ -70,6 +70,11 @@ export default function Dashboard() {
             <h3 className="font-semibold text-gray-900 mb-2">Diventa tutor</h3>
             <p className="text-sm text-gray-500">Offri ripetizioni e guadagna</p>
           </Link>
+          <Link href="/sessioni" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
+            <div className="text-3xl mb-4">📅</div>
+            <h3 className="font-semibold text-gray-900 mb-2">Le mie sessioni</h3>
+            <p className="text-sm text-gray-500">Gestisci le tue prenotazioni</p>
+          </Link>
         </div>
       </div>
     </main>
