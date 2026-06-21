@@ -4,6 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const sessioneId = body.sessioneId
+    const roomName = 'sessione-' + sessioneId
 
     const response = await fetch('https://api.daily.co/v1/rooms', {
       method: 'POST',
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        name: 'sessione-' + sessioneId,
+        name: roomName,
         properties: {
           enable_chat: true,
           start_video_off: false,
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
 
     if (data.url) {
-      return NextResponse.json({ url: data.url })
+      return NextResponse.json({ url: data.url, roomName: roomName })
     } else {
       return NextResponse.json({ error: 'Errore nella creazione della stanza' }, { status: 500 })
     }
