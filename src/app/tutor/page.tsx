@@ -38,6 +38,10 @@ export default function Tutor() {
     return m.includes(s)
   })
 
+  const sortedTutors = filteredTutors.sort(function (a, b) {
+    return a.tariffa_oraria - b.tariffa_oraria
+  })
+
   function updateSearch(e: React.ChangeEvent<HTMLInputElement>) {
     const valore = e.target.value
     setSearch(valore)
@@ -64,6 +68,10 @@ export default function Tutor() {
     router.push('/prenota/' + tutorId)
   }
 
+  function nomeVisibile(t: Tutor) {
+    return t.nome ? t.nome : t.email
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
@@ -79,7 +87,7 @@ export default function Tutor() {
         <div className="relative mb-8 max-w-xl">
           <input
             type="text"
-            placeholder="Cerca per materia..."
+            placeholder="Scrivi la materia per cui cerchi un tutor..."
             value={search}
             onChange={updateSearch}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
@@ -102,13 +110,13 @@ export default function Tutor() {
         </div>
 
         {loading && <p className="text-gray-500">Caricamento...</p>}
-        {!loading && filteredTutors.length === 0 && <p className="text-gray-500">Nessun tutor trovato</p>}
+        {!loading && sortedTutors.length === 0 && <p className="text-gray-500">Nessun tutor trovato per questa materia</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {filteredTutors.map(function (t) {
+          {sortedTutors.map(function (t) {
             return (
               <div key={t.id} className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h3 className="font-semibold text-gray-900 mb-2">{t.email}</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">{nomeVisibile(t)}</h3>
                 <p className="text-sm text-gray-500 mb-3">{t.materie_insegnate}</p>
                 <p className="font-bold text-gray-900 mb-4">€ {t.tariffa_oraria.toFixed(2)} / ora</p>
                 <button
