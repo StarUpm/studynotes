@@ -11,6 +11,8 @@ type Tutor = {
   email: string
   materie_insegnate: string
   tariffa_oraria: number
+  votoMedio: number
+  numeroRecensioni: number
 }
 
 export default function Tutor() {
@@ -23,8 +25,32 @@ export default function Tutor() {
   useEffect(() => {
     async function fetchTutors() {
       const result = await supabase.from('profiles').select('*').eq('is_tutor', true)
+      const recensioniResult = await supabase.from('reviews').select('*')
+
       if (result.data) {
-        setTutors(result.data)
+        const tutorsConVoti = result.data.map(function (t) {
+          const recensioniTutor = recensioniResult.data ? recensioniResult.data.filter(function (r) {
+            return r.destinatario_id === t.id
+          }) : []
+          const numeroRecensioni = recensioniTutor.length
+          let votoMedio = 0
+          if (numeroRecensioni > 0) {
+            const somma = recensioniTutor.reduce(function (acc, r) {
+              return acc + r.voto
+            }, 0)
+            votoMedio = somma / numeroRecensioni
+          }
+          return {
+            id: t.id,
+            nome: t.nome,
+            email: t.email,
+            materie_insegnate: t.materie_insegnate,
+            tariffa_oraria: t.tariffa_oraria,
+            votoMedio: votoMedio,
+            numeroRecensioni: numeroRecensioni
+          }
+        })
+        setTutors(tutorsConVoti)
       }
       setLoading(false)
     }
@@ -39,8 +65,13 @@ export default function Tutor() {
   })
 
   const sortedTutors = filteredTutors.sort(function (a, b) {
-    return a.tariffa_oraria - b.tariffa_oraria
+    if (b.votoMedio !== a.votoMedio) {
+      return b.votoMedio - a.votoMedio
+    }
+    return b.numeroRecensioni - a.numeroRecensioni
   })
+
+  const top10 = sortedTutors.slice(0, 10)
 
   function updateSearch(e: React.ChangeEvent<HTMLInputElement>) {
     const valore = e.target.value
@@ -72,6 +103,14 @@ export default function Tutor() {
     return t.nome ? t.nome : t.email
   }
 
+  function renderStelle(voto: number) {
+    const stelle = []
+    for (let i = 1; i <= 5; i++) {
+      stelle.push(i <= Math.round(voto) ? '★' : '☆')
+    }
+    return stelle.join('')
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
@@ -82,7 +121,7 @@ export default function Tutor() {
       </nav>
       <div className="max-w-6xl mx-auto px-8 py-10">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Trova un tutor</h1>
-        <p className="text-gray-500 mb-6">Prenota ripetizioni online con altri studenti</p>
+        <p className="text-gray-500 mb-6">I migliori tutor per la materia che cerchi</p>
 
         <div className="relative mb-8 max-w-xl">
           <input
@@ -110,14 +149,17 @@ export default function Tutor() {
         </div>
 
         {loading && <p className="text-gray-500">Caricamento...</p>}
-        {!loading && sortedTutors.length === 0 && <p className="text-gray-500">Nessun tutor trovato per questa materia</p>}
+        {!loading && top10.length === 0 && <p className="text-gray-500">Nessun tutor trovato per questa materia</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sortedTutors.map(function (t) {
+          {top10.map(function (t) {
             return (
               <div key={t.id} className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h3 className="font-semibold text-gray-900 mb-2">{nomeVisibile(t)}</h3>
-                <p className="text-sm text-gray-500 mb-3">{t.materie_insegnate}</p>
+                <h3 className="font-semibold text-gray-900 mb-1">{nomeVisibile(t)}</h3>
+                <p className="text-sm text-gray-500 mb-2">{t.materie_insegnate}</p>
+                <p className="text-yellow-400 text-sm mb-2">
+                  {renderStelle(t.votoMedio)} <span className="text-gray-400">({t.numeroRecensioni})</span>
+                </p>
                 <p className="font-bold text-gray-900 mb-4">€ {t.tariffa_oraria.toFixed(2)} / ora</p>
                 <button
                   onClick={function () { prenota(t.id) }}
