@@ -48,7 +48,8 @@ export default function Dashboard() {
             <h3 className="font-semibold text-gray-900 mb-2">Carica appunti</h3>
             <p className="text-sm text-gray-500">Vendi i tuoi appunti e guadagna</p>
           </Link>
-          <Link href="/esplora" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
+          <Link href="/esplora" className="text-sm text-gray-500 hover:text-blue-600">Esplora appunti</Link>
+<Link href="/modifica-profilo" className="text-sm text-gray-500 hover:text-blue-600">Il mio profilo</Link>
             <div className="text-3xl mb-4">🔍</div>
             <h3 className="font-semibold text-gray-900 mb-2">Esplora appunti</h3>
             <p className="text-sm text-gray-500">Trova appunti di altri studenti</p>
