@@ -7,8 +7,12 @@ import { useRouter, useParams } from 'next/navigation'
 type Profilo = {
   id: string
   nome: string
+  cognome: string
   email: string
   universita: string
+  tipo_istituto: string
+  anno_studio: string
+  curriculum: string
   bio: string
   is_tutor: boolean
   materie_insegnate: string
@@ -62,7 +66,14 @@ export default function ProfiloPubblico() {
 
   function nomeVisibile() {
     if (!profilo) return ''
-    return profilo.nome ? profilo.nome : profilo.email
+    if (profilo.nome && profilo.cognome) return profilo.nome + ' ' + profilo.cognome
+    if (profilo.nome) return profilo.nome
+    return profilo.email
+  }
+
+  function nomeIstituto() {
+    if (!profilo) return ''
+    return profilo.tipo_istituto === 'liceo' ? 'Scuola superiore' : 'Universita'
   }
 
   function votoMedio() {
@@ -117,20 +128,35 @@ export default function ProfiloPubblico() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{nomeVisibile()}</h1>
-              {profilo.universita && <p className="text-sm text-gray-500">{profilo.universita}</p>}
+              {profilo.is_tutor ? (
+                <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">Tutor</span>
+              ) : (
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Studente</span>
+              )}
             </div>
           </div>
 
-          {profilo.bio && <p className="text-gray-600 mb-4">{profilo.bio}</p>}
+          {profilo.universita && (
+            <p className="text-sm text-gray-500 mb-1">
+              {nomeIstituto()}: {profilo.universita} {profilo.anno_studio ? '- ' + profilo.anno_studio : ''}
+            </p>
+          )}
+
+          {profilo.curriculum && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-sm font-medium text-gray-700 mb-1">Curriculum</p>
+              <p className="text-sm text-gray-600">{profilo.curriculum}</p>
+            </div>
+          )}
 
           {recensioni.length > 0 && (
-            <p className="text-yellow-400 text-sm mb-4">
+            <p className="text-yellow-400 text-sm mt-4">
               {renderStelle(votoMedio())} <span className="text-gray-400">({recensioni.length} recensioni)</span>
             </p>
           )}
 
           {profilo.is_tutor && (
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="bg-blue-50 rounded-lg p-4 mt-4">
               <p className="text-sm font-medium text-blue-600 mb-1">Tutor disponibile</p>
               <p className="text-sm text-gray-700">{profilo.materie_insegnate}</p>
               <p className="text-sm font-bold text-gray-900 mt-1">€ {profilo.tariffa_oraria.toFixed(2)} / ora</p>
