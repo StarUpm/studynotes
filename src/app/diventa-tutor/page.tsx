@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { materie } from '@/lib/dati-universita'
 
 export default function DiventaTutor() {
-  const [materieInsegnate, setMaterieInsegnate] = useState('')
+  const [nome, setNome] = useState('')
+  const [materiaInput, setMateriaInput] = useState('')
   const [tariffa, setTariffa] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [suggerimenti, setSuggerimenti] = useState<string[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -18,7 +21,8 @@ export default function DiventaTutor() {
       if (userData.data.user) {
         const result = await supabase.from('profiles').select('*').eq('id', userData.data.user.id).single()
         if (result.data) {
-          setMaterieInsegnate(result.data.materie_insegnate || '')
+          setNome(result.data.nome || '')
+          setMateriaInput(result.data.materie_insegnate || '')
           setTariffa(result.data.tariffa_oraria ? result.data.tariffa_oraria.toString() : '')
         }
       }
@@ -26,7 +30,29 @@ export default function DiventaTutor() {
     caricaProfilo()
   }, [])
 
+  function updateMateria(e: React.ChangeEvent<HTMLInputElement>) {
+    const valore = e.target.value
+    setMateriaInput(valore)
+    if (valore.length > 0) {
+      const filtrati = materie.filter(function (m) {
+        return m.toLowerCase().includes(valore.toLowerCase())
+      })
+      setSuggerimenti(filtrati.slice(0, 6))
+    } else {
+      setSuggerimenti([])
+    }
+  }
+
+  function selezionaMateria(valore: string) {
+    setMateriaInput(valore)
+    setSuggerimenti([])
+  }
+
   async function salvaProfiloTutor() {
+    if (!nome) {
+      setError('Inserisci il tuo nome')
+      return
+    }
     setLoading(true)
     setError('')
 
@@ -38,8 +64,9 @@ export default function DiventaTutor() {
     }
 
     const result = await supabase.from('profiles').update({
+      nome: nome,
       is_tutor: true,
-      materie_insegnate: materieInsegnate,
+      materie_insegnate: materiaInput,
       tariffa_oraria: parseFloat(tariffa) || 0
     }).eq('id', userData.data.user.id)
 
@@ -52,8 +79,8 @@ export default function DiventaTutor() {
     setLoading(false)
   }
 
-  function updateMaterie(e: React.ChangeEvent<HTMLInputElement>) {
-    setMaterieInsegnate(e.target.value)
+  function updateNome(e: React.ChangeEvent<HTMLInputElement>) {
+    setNome(e.target.value)
   }
 
   function updateTariffa(e: React.ChangeEvent<HTMLInputElement>) {
@@ -82,15 +109,41 @@ export default function DiventaTutor() {
 
           <input
             type="text"
-            placeholder="Materia"
-            value={materieInsegnate}
-            onChange={updateMaterie}
+            placeholder="Il tuo nome utente"
+            value={nome}
+            onChange={updateNome}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
           />
-         <input
+
+          <div className="relative mb-3">
+            <input
+              type="text"
+              placeholder="Materia che insegni (es. Matematica)"
+              value={materiaInput}
+              onChange={updateMateria}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+            />
+            {suggerimenti.length > 0 && (
+              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
+                {suggerimenti.map(function (s, i) {
+                  return (
+                    <button
+                      key={i}
+                      onClick={function () { selezionaMateria(s) }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <input
             type="number"
             step="0.01"
-            placeholder="Tariffa oraria"
+            placeholder="Tariffa oraria in euro (es. 15.50)"
             value={tariffa}
             onChange={updateTariffa}
             className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
