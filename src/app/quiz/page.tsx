@@ -10,10 +10,23 @@ type Domanda = {
   spiegazione: string
 }
 
+type Flashcard = {
+  fronte: string
+  retro: string
+}
+
+type Schema = {
+  titolo: string
+  sezioni: { sottotema: string; punti: string[] }[]
+}
+
 export default function Quiz() {
-  const [file, setFile] = useState<File | null>(null)
   const [testoManuale, setTestoManuale] = useState('')
+  const [tabAttivo, setTabAttivo] = useState('quiz')
   const [quiz, setQuiz] = useState<Domanda[]>([])
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+  const [schema, setSchema] = useState<Schema | null>(null)
+  const [flashcardGirate, setFlashcardGirate] = useState<number[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [rispostePresenti, setRispostePresenti] = useState<number[]>([])
@@ -27,38 +40,40 @@ export default function Quiz() {
     setTestoManuale(e.target.value)
   }
 
-  function updateFile(e: React.ChangeEvent<HTMLInputElement>) {
-    setFile(e.target.files ? e.target.files[0] : null)
-  }
-
-  async function generaQuiz() {
-    if (!file && testoManuale.length < 50) {
-      setError('Carica un PDF oppure inserisci almeno 50 caratteri di testo')
+  async function generaContenuto() {
+    if (testoManuale.length < 50) {
+      setError('Inserisci almeno 50 caratteri di testo')
       return
     }
     setLoading(true)
     setError('')
     setQuiz([])
+    setFlashcards([])
+    setSchema(null)
     setRispostePresenti([])
+    setFlashcardGirate([])
 
     try {
-      const formData = new FormData()
-      if (file) {
-        formData.append('file', file)
-      } else {
-        formData.append('testo', testoManuale)
-      }
+      let endpoint = '/api/generate-quiz'
+      if (tabAttivo === 'flashcard') endpoint = '/api/generate-flashcard'
+      if (tabAttivo === 'schema') endpoint = '/api/generate-schema'
 
-      const response = await fetch('/api/generate-quiz', {
+      const response = await fetch(endpoint, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testo: testoManuale })
       })
       const data = await response.json()
-      if (data.quiz) {
+
+      if (tabAttivo === 'quiz' && data.quiz) {
         setQuiz(data.quiz)
         setRispostePresenti(new Array(data.quiz.length).fill(-1))
+      } else if (tabAttivo === 'flashcard' && data.flashcard) {
+        setFlashcards(data.flashcard)
+      } else if (tabAttivo === 'schema' && data.schema) {
+        setSchema(data.schema)
       } else {
-        setError(data.error || 'Errore nella generazione del quiz')
+        setError(data.error || 'Errore nella generazione')
       }
     } catch (e) {
       setError('Errore di connessione')
@@ -72,6 +87,21 @@ export default function Quiz() {
     setRispostePresenti(nuove)
   }
 
+  function giraFlashcard(indice: number) {
+    if (flashcardGirate.includes(indice)) {
+      setFlashcardGirate(flashcardGirate.filter(function (i) { return i !== indice }))
+    } else {
+      setFlashcardGirate([...flashcardGirate, indice])
+    }
+  }
+
+  function cambiaTab(tab: string) {
+    setTabAttivo(tab)
+    setQuiz([])
+    setFlashcards([])
+    setSchema(null)
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
@@ -81,23 +111,33 @@ export default function Quiz() {
         </button>
       </nav>
       <div className="max-w-3xl mx-auto px-8 py-10">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Genera quiz con AI</h1>
-        <p className="text-gray-500 mb-6">Carica un PDF oppure incolla il testo per generare un quiz</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Studia con AI</h1>
+        <p className="text-gray-500 mb-6">Genera quiz, flashcard o schemi dai tuoi appunti</p>
+
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={function () { cambiaTab('quiz') }}
+            className={tabAttivo === 'quiz' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm' : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm'}
+          >
+            Quiz
+          </button>
+          <button
+            onClick={function () { cambiaTab('flashcard') }}
+            className={tabAttivo === 'flashcard' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm' : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm'}
+          >
+            Flashcard
+          </button>
+          <button
+            onClick={function () { cambiaTab('schema') }}
+            className={tabAttivo === 'schema' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm' : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm'}
+          >
+            Schema
+          </button>
+        </div>
 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Opzione 1: Carica un PDF</p>
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={updateFile}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-2 text-sm"
-          />
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Opzione 2: Incolla il testo</p>
           <textarea
             placeholder="Incolla qui il testo dei tuoi appunti..."
             value={testoManuale}
@@ -108,14 +148,14 @@ export default function Quiz() {
         </div>
 
         <button
-          onClick={generaQuiz}
+          onClick={generaContenuto}
           disabled={loading}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-8"
         >
-          {loading ? 'Generazione in corso...' : 'Genera quiz'}
+          {loading ? 'Generazione in corso...' : 'Genera ' + tabAttivo}
         </button>
 
-        {quiz.map(function (domanda, indiceDomanda) {
+        {tabAttivo === 'quiz' && quiz.map(function (domanda, indiceDomanda) {
           return (
             <div key={indiceDomanda} className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
               <p className="font-semibold text-gray-900 mb-4">{indiceDomanda + 1}. {domanda.domanda}</p>
@@ -149,6 +189,43 @@ export default function Quiz() {
             </div>
           )
         })}
+
+        {tabAttivo === 'flashcard' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {flashcards.map(function (fc, indice) {
+              const girata = flashcardGirate.includes(indice)
+              return (
+                <div
+                  key={indice}
+                  onClick={function () { giraFlashcard(indice) }}
+                  className="bg-white rounded-2xl border border-gray-100 p-6 cursor-pointer min-h-32 flex items-center justify-center text-center hover:border-blue-300"
+                >
+                  <p className={girata ? 'text-sm text-gray-600' : 'font-semibold text-gray-900'}>
+                    {girata ? fc.retro : fc.fronte}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {tabAttivo === 'schema' && schema && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">{schema.titolo}</h2>
+            {schema.sezioni.map(function (sezione, i) {
+              return (
+                <div key={i} className="mb-4">
+                  <p className="font-semibold text-blue-600 mb-2">{sezione.sottotema}</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {sezione.punti.map(function (punto, j) {
+                      return <li key={j} className="text-sm text-gray-600">{punto}</li>
+                    })}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </main>
   )
