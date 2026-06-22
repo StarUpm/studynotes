@@ -29,6 +29,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ quiz: quiz })
   } catch (error) {
-    return NextResponse.json({ error: 'Errore nella generazione del quiz' }, { status: 500 })
+    return NextResponse.json({ error: 'Errore nella generazione del quiz: ' + String(error) }, { status: 500 })
   }
 }
