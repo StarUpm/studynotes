@@ -22,12 +22,14 @@ type Schema = {
 
 export default function Quiz() {
   const [testoManuale, setTestoManuale] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [tabAttivo, setTabAttivo] = useState('quiz')
   const [quiz, setQuiz] = useState<Domanda[]>([])
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [schema, setSchema] = useState<Schema | null>(null)
   const [flashcardGirate, setFlashcardGirate] = useState<number[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingFile, setLoadingFile] = useState(false)
   const [error, setError] = useState('')
   const [rispostePresenti, setRispostePresenti] = useState<number[]>([])
   const router = useRouter()
@@ -40,9 +42,38 @@ export default function Quiz() {
     setTestoManuale(e.target.value)
   }
 
+  async function updateFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const fileSelezionato = e.target.files ? e.target.files[0] : null
+    setFile(fileSelezionato)
+    if (!fileSelezionato) return
+
+    setLoadingFile(true)
+    setError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('file', fileSelezionato)
+
+      const response = await fetch('/api/estrai-testo', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await response.json()
+
+      if (data.testo) {
+        setTestoManuale(data.testo)
+      } else {
+        setError(data.error || 'Errore nella lettura del file')
+      }
+    } catch (e) {
+      setError('Errore nel caricamento del file')
+    }
+    setLoadingFile(false)
+  }
+
   async function generaContenuto() {
     if (testoManuale.length < 50) {
-      setError('Inserisci almeno 50 caratteri di testo')
+      setError('Carica un file oppure inserisci almeno 50 caratteri di testo')
       return
     }
     setLoading(true)
@@ -138,6 +169,19 @@ export default function Quiz() {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">Carica un file (PDF, Word o TXT)</p>
+          <input
+            type="file"
+            accept=".pdf,.docx,.txt"
+            onChange={updateFile}
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm"
+          />
+          {loadingFile && <p className="text-sm text-blue-600 mb-2">Lettura del file in corso...</p>}
+          {file && !loadingFile && testoManuale.length > 0 && (
+            <p className="text-sm text-green-600 mb-2">File letto correttamente ({testoManuale.length} caratteri)</p>
+          )}
+
+          <p className="text-sm font-medium text-gray-700 mb-2 mt-4">Oppure incolla il testo direttamente</p>
           <textarea
             placeholder="Incolla qui il testo dei tuoi appunti..."
             value={testoManuale}
@@ -149,7 +193,7 @@ export default function Quiz() {
 
         <button
           onClick={generaContenuto}
-          disabled={loading}
+          disabled={loading || loadingFile}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-8"
         >
           {loading ? 'Generazione in corso...' : 'Genera ' + tabAttivo}
