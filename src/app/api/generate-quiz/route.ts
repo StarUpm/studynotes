@@ -4,27 +4,28 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const testo = body.testo
-
     if (!testo) {
       return NextResponse.json({ error: 'Testo mancante' }, { status: 400 })
     }
 
     const prompt = 'Genera 5 domande a risposta multipla in italiano basate su questo testo di appunti universitari. Per ogni domanda fornisci 4 opzioni e indica quale e corretta. Rispondi SOLO con un array JSON in questo formato esatto, senza testo aggiuntivo: [{"domanda": "testo", "opzioni": ["a","b","c","d"], "risposta_corretta": 0, "spiegazione": "testo"}]. Testo appunti: ' + testo
 
-    const apiKey = process.env.GEMINI_API_KEY
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey
-
-    const geminiResponse = await fetch(url, {
+    const apiKey = process.env.GROQ_API_KEY
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7
       })
     })
 
-    const data = await geminiResponse.json()
-    console.log('RISPOSTA GEMINI:', JSON.stringify(data))
-    const textResult = data.candidates[0].content.parts[0].text
+    const data = await groqResponse.json()
+    const textResult = data.choices[0].message.content
     const cleanedText = textResult.replace('```json', '').replace('```', '').trim()
     const quiz = JSON.parse(cleanedText)
 
