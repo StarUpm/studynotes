@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     })
 
     const data = await geminiResponse.json()
+    console.log('RISPOSTA GEMINI:', JSON.stringify(data))
     const textResult = data.candidates[0].content.parts[0].text
     const cleanedText = textResult.replace('```json', '').replace('```', '').trim()
     const quiz = JSON.parse(cleanedText)
