@@ -4,31 +4,33 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const testo = body.testo
-
     if (!testo) {
       return NextResponse.json({ error: 'Testo mancante' }, { status: 400 })
     }
 
-    const prompt = 'Genera 8 flashcard in italiano basate su questo testo di appunti universitari. Ogni flashcard ha un concetto/termine sul fronte e la spiegazione sul retro. Rispondi SOLO con un array JSON in questo formato esatto, senza testo aggiuntivo: [{"fronte": "termine o domanda breve", "retro": "spiegazione concisa"}]. Testo appunti: ' + testo
+    const prompt = 'Genera 8 flashcard in italiano basate su questo testo di appunti universitari. Ogni flashcard deve avere una domanda/termine sul fronte e una risposta/definizione sul retro. Rispondi SOLO con un array JSON in questo formato esatto, senza testo aggiuntivo: [{"fronte": "testo", "retro": "testo"}]. Testo appunti: ' + testo
 
-    const apiKey = process.env.GEMINI_API_KEY
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey
-
-    const geminiResponse = await fetch(url, {
+    const apiKey = process.env.GROQ_API_KEY
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7
       })
     })
 
-    const data = await geminiResponse.json()
-    const textResult = data.candidates[0].content.parts[0].text
+    const data = await groqResponse.json()
+    const textResult = data.choices[0].message.content
     const cleanedText = textResult.replace('```json', '').replace('```', '').trim()
     const flashcard = JSON.parse(cleanedText)
 
     return NextResponse.json({ flashcard: flashcard })
   } catch (error) {
-    return NextResponse.json({ error: 'Errore nella generazione delle flashcard' }, { status: 500 })
+    return NextResponse.json({ error: 'Errore nella generazione delle flashcard: ' + String(error) }, { status: 500 })
   }
 }
