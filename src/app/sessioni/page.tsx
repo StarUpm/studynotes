@@ -13,14 +13,12 @@ type Sessione = {
   durata_minuti: number
   prezzo: number
   stato: string
-  link_videochiamata: string
 }
 
 export default function Sessioni() {
   const [sessioniComeStudente, setSessioniComeStudente] = useState<Sessione[]>([])
   const [sessioniComeTutor, setSessioniComeTutor] = useState<Sessione[]>([])
   const [loading, setLoading] = useState(true)
-  const [azioneInCorso, setAzioneInCorso] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -49,41 +47,6 @@ export default function Sessioni() {
     if (comeStudente.data) setSessioniComeStudente(comeStudente.data)
     if (comeTutor.data) setSessioniComeTutor(comeTutor.data)
     setLoading(false)
-
-    const tutteLeSessioni = [...(comeStudente.data || []), ...(comeTutor.data || [])]
-    const daControllare = tutteLeSessioni.filter(function (s) {
-      return s.stato === 'confermata' && s.link_videochiamata
-    })
-
-    for (const sessione of daControllare) {
-      verificaInBackground(sessione.id)
-    }
-  }
-
-  async function verificaInBackground(sessioneId: string) {
-    try {
-      const response = await fetch('/api/verifica-sessione', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessioneId: sessioneId })
-      })
-      const data = await response.json()
-      if (data.completata) {
-        fetchSessioni()
-      }
-    } catch (e) {
-      console.log('Verifica automatica non riuscita')
-    }
-  }
-
-  function monitoraFinestra(finestra: Window | null, sessioneId: string) {
-    if (!finestra) return
-    const controllo = setInterval(function () {
-      if (finestra.closed) {
-        clearInterval(controllo)
-        verificaInBackground(sessioneId)
-      }
-    }, 1000)
   }
 
   async function confermaSessione(sessioneId: string) {
@@ -96,35 +59,8 @@ export default function Sessioni() {
     fetchSessioni()
   }
 
-  async function entraInVideochiamata(sessione: Sessione) {
-    if (sessione.link_videochiamata) {
-      const finestra = window.open(sessione.link_videochiamata, '_blank')
-      monitoraFinestra(finestra, sessione.id)
-      return
-    }
-
-    setAzioneInCorso(sessione.id)
-
-    try {
-      const response = await fetch('/api/create-room', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessioneId: sessione.id })
-      })
-      const data = await response.json()
-
-      if (data.url) {
-        await supabase.from('tutoring_sessions').update({ link_videochiamata: data.url }).eq('id', sessione.id)
-        const finestra = window.open(data.url, '_blank')
-        monitoraFinestra(finestra, sessione.id)
-        fetchSessioni()
-      } else {
-        alert('Errore nella creazione della videochiamata')
-      }
-    } catch (e) {
-      alert('Errore di connessione')
-    }
-    setAzioneInCorso('')
+  function entraInVideochiamata(sessioneId: string) {
+    router.push('/videochiamata/' + sessioneId)
   }
 
   function goToDashboard() {
@@ -160,7 +96,6 @@ export default function Sessioni() {
         {sessioniComeStudente.length === 0 && <p className="text-gray-500 mb-8">Nessuna sessione prenotata</p>}
         <div className="space-y-3 mb-10">
           {sessioniComeStudente.map(function (s) {
-            const inCorso = azioneInCorso === s.id
             return (
               <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex justify-between items-center">
                 <div>
@@ -170,11 +105,10 @@ export default function Sessioni() {
                 </div>
                 {s.stato === 'confermata' ? (
                   <button
-                    onClick={function () { entraInVideochiamata(s) }}
-                    disabled={inCorso}
-                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    onClick={function () { entraInVideochiamata(s.id) }}
+                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700"
                   >
-                    {inCorso ? 'Attendere...' : 'Entra in videochiamata'}
+                    Entra in videochiamata
                   </button>
                 ) : (
                   <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
@@ -188,7 +122,6 @@ export default function Sessioni() {
         {sessioniComeTutor.length === 0 && <p className="text-gray-500">Nessuna richiesta ricevuta</p>}
         <div className="space-y-3">
           {sessioniComeTutor.map(function (s) {
-            const inCorso = azioneInCorso === s.id
             return (
               <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex justify-between items-center">
                 <div>
@@ -207,11 +140,10 @@ export default function Sessioni() {
                   </div>
                 ) : s.stato === 'confermata' ? (
                   <button
-                    onClick={function () { entraInVideochiamata(s) }}
-                    disabled={inCorso}
-                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    onClick={function () { entraInVideochiamata(s.id) }}
+                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700"
                   >
-                    {inCorso ? 'Attendere...' : 'Entra in videochiamata'}
+                    Entra in videochiamata
                   </button>
                 ) : (
                   <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
