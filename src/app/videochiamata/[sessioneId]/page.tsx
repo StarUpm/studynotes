@@ -77,10 +77,15 @@ export default function Videochiamata() {
       width: '100%',
       height: '100%',
       parentNode: containerRef.current,
+      userInfo: {
+        displayName: ruolo === 'tutor' ? 'Tutor' : 'Studente'
+      },
       configOverwrite: {
         startWithAudioMuted: false,
         startWithVideoMuted: false,
-        prejoinPageEnabled: false
+        prejoinPageEnabled: false,
+        disableDeepLinking: true,
+        requireDisplayName: false
       },
       interfaceConfigOverwrite: {
         TOOLBAR_BUTTONS: ['microphone', 'camera', 'chat', 'hangup', 'fullscreen']
