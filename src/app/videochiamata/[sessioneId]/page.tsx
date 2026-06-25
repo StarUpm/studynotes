@@ -73,7 +73,7 @@ export default function Videochiamata() {
   function inizializzaChiamata(ruoloLocale: string) {
     if (!containerRef.current) return
 
-    const roomName = 'studynotes-sessione-' + sessioneId
+    const roomName = 'StudyNotesPlatform2026Session' + sessioneId.replace(/-/g, '')
 
     const options = {
       roomName: roomName,
@@ -145,11 +145,11 @@ export default function Videochiamata() {
 
   return (
     <main style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#1a1a1a' }}>
-      <nav className="bg-gray-800 px-6 py-3 flex justify-between items-center">
-        <span className="text-white font-semibold">StudyNotes - Videochiamata</span>
+      <nav className="bg-gray-800 px-6 py-3 flex items-center">
         <button onClick={tornaSessioni} className="text-gray-300 text-sm hover:text-white">
           Esci e torna alle sessioni
         </button>
+        <span className="text-white font-semibold text-sm ml-auto mr-8">StudyNotes</span>
       </nav>
       {messaggioStato && (
         <div className="text-center text-white py-4">
