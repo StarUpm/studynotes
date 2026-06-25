@@ -35,16 +35,19 @@ export default function Videochiamata() {
       }
 
       const sessione = sessioneResult.data
+      let ruoloLocale = ''
       if (sessione.tutor_id === userData.data.user.id) {
+        ruoloLocale = 'tutor'
         setRuolo('tutor')
       } else if (sessione.studente_id === userData.data.user.id) {
+        ruoloLocale = 'studente'
         setRuolo('studente')
       } else {
         setMessaggioStato('Non sei autorizzato a questa sessione')
         return
       }
 
-      caricaScriptJitsi()
+      caricaScriptJitsi(ruoloLocale)
     }
 
     determinaRuolo()
@@ -56,18 +59,18 @@ export default function Videochiamata() {
     }
   }, [sessioneId])
 
-  function caricaScriptJitsi() {
+  function caricaScriptJitsi(ruoloLocale: string) {
     if (window.JitsiMeetExternalAPI) {
-      inizializzaChiamata()
+      inizializzaChiamata(ruoloLocale)
       return
     }
     const script = document.createElement('script')
     script.src = 'https://meet.jit.si/external_api.js'
-    script.onload = inizializzaChiamata
+    script.onload = function () { inizializzaChiamata(ruoloLocale) }
     document.body.appendChild(script)
   }
 
-  function inizializzaChiamata() {
+  function inizializzaChiamata(ruoloLocale: string) {
     if (!containerRef.current) return
 
     const roomName = 'studynotes-sessione-' + sessioneId
@@ -78,7 +81,7 @@ export default function Videochiamata() {
       height: '100%',
       parentNode: containerRef.current,
       userInfo: {
-        displayName: ruolo === 'tutor' ? 'Tutor' : 'Studente'
+        displayName: ruoloLocale === 'tutor' ? 'Tutor' : 'Studente'
       },
       configOverwrite: {
         startWithAudioMuted: false,
@@ -98,11 +101,11 @@ export default function Videochiamata() {
     setMessaggioStato('')
 
     api.addEventListener('videoConferenceJoined', function () {
-      registraEvento('entrato')
+      registraEvento('entrato', ruoloLocale)
     })
 
     api.addEventListener('videoConferenceLeft', function () {
-      registraEvento('uscito')
+      registraEvento('uscito', ruoloLocale)
     })
 
     api.addEventListener('readyToClose', function () {
@@ -110,12 +113,12 @@ export default function Videochiamata() {
     })
   }
 
-  async function registraEvento(evento: string) {
+  async function registraEvento(evento: string, ruoloLocale: string) {
     try {
       const response = await fetch('/api/evento-chiamata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessioneId: sessioneId, ruolo: ruolo, evento: evento })
+        body: JSON.stringify({ sessioneId: sessioneId, ruolo: ruoloLocale, evento: evento })
       })
       const data = await response.json()
       if (evento === 'uscito' && data.completata) {
@@ -134,7 +137,7 @@ export default function Videochiamata() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-900 flex flex-col">
+    <main style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#1a1a1a' }}>
       <nav className="bg-gray-800 px-6 py-3 flex justify-between items-center">
         <span className="text-white font-semibold">StudyNotes - Videochiamata</span>
         <button onClick={tornaSessioni} className="text-gray-300 text-sm hover:text-white">
@@ -146,7 +149,7 @@ export default function Videochiamata() {
           {messaggioStato}
         </div>
       )}
-      <div ref={containerRef} className="flex-1 w-full"></div>
+      <div ref={containerRef} style={{ flex: 1, width: '100%', position: 'relative' }}></div>
     </main>
   )
 }
