@@ -100,6 +100,7 @@ export default function Videochiamata() {
         DEFAULT_REMOTE_DISPLAY_NAME: 'Partecipante',
         HIDE_DEEP_LINKING_LOGO: true
       }
+    }
 
     const api = new window.JitsiMeetExternalAPI('meet.jit.si', options)
     apiRef.current = api
