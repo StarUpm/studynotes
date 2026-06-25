@@ -88,12 +88,18 @@ export default function Videochiamata() {
         startWithVideoMuted: false,
         prejoinPageEnabled: false,
         disableDeepLinking: true,
-        requireDisplayName: false
+        requireDisplayName: false,
+        hideConferenceSubject: true,
+        disableInviteFunctions: true
       },
       interfaceConfigOverwrite: {
-        TOOLBAR_BUTTONS: ['microphone', 'camera', 'chat', 'hangup', 'fullscreen']
+        TOOLBAR_BUTTONS: ['microphone', 'camera', 'chat', 'hangup', 'fullscreen'],
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        SHOW_BRAND_WATERMARK: false,
+        DEFAULT_REMOTE_DISPLAY_NAME: 'Partecipante',
+        HIDE_DEEP_LINKING_LOGO: true
       }
-    }
 
     const api = new window.JitsiMeetExternalAPI('meet.jit.si', options)
     apiRef.current = api
