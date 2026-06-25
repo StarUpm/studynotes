@@ -90,7 +90,10 @@ export default function Videochiamata() {
         disableDeepLinking: true,
         requireDisplayName: false,
         hideConferenceSubject: true,
-        disableInviteFunctions: true
+        disableInviteFunctions: true,
+        enableWelcomePage: false,
+        enableClosePage: false,
+        hideLobbyButton: true
       },
       interfaceConfigOverwrite: {
         TOOLBAR_BUTTONS: ['microphone', 'camera', 'chat', 'hangup', 'fullscreen'],
