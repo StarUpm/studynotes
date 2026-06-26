@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Layout from '@/app/components/Layout'
 
 type Note = {
   id: string
@@ -38,12 +39,10 @@ export default function Esplora() {
           const numeroRecensioni = recensioniNota.length
           let votoMedio = 0
           if (numeroRecensioni > 0) {
-            const somma = recensioniNota.reduce(function (acc, r) {
-              return acc + r.voto
-            }, 0)
+            const somma = recensioniNota.reduce(function (acc, r) { return acc + r.voto }, 0)
             votoMedio = somma / numeroRecensioni
           }
-          return Object.assign({}, n, { votoMedio: votoMedio, numeroRecensioni: numeroRecensioni })
+          return Object.assign({}, n, { votoMedio, numeroRecensioni })
         })
         setNotes(noteConVoti)
       }
@@ -54,30 +53,13 @@ export default function Esplora() {
 
   const filteredNotes = notes.filter(function (note) {
     const s = search.toLowerCase()
-    const t = note.titolo.toLowerCase().includes(s)
-    const m = note.materia.toLowerCase().includes(s)
-    const u = note.universita.toLowerCase().includes(s)
-    return t || m || u
+    return note.titolo.toLowerCase().includes(s) ||
+      note.materia.toLowerCase().includes(s) ||
+      note.universita.toLowerCase().includes(s)
   })
 
-  function goToDashboard() {
-    router.push('/dashboard')
-  }
-
-  function updateSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearch(e.target.value)
-  }
-
-  function vaiARecensione(noteId: string) {
-    router.push('/recensione-appunto/' + noteId)
-  }
-
   function renderStelle(voto: number) {
-    const stelle = []
-    for (let i = 1; i <= 5; i++) {
-      stelle.push(i <= Math.round(voto) ? '★' : '☆')
-    }
-    return stelle.join('')
+    return [1,2,3,4,5].map(i => i <= Math.round(voto) ? '★' : '☆').join('')
   }
 
   async function gestisciAcquisto(note: Note) {
@@ -85,7 +67,6 @@ export default function Esplora() {
       window.open(note.file_url, '_blank')
       return
     }
-
     setAcquistoInCorso(note.id)
     const userData = await supabase.auth.getUser()
     if (!userData.data.user) {
@@ -93,7 +74,6 @@ export default function Esplora() {
       setAcquistoInCorso('')
       return
     }
-
     try {
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
@@ -120,54 +100,47 @@ export default function Esplora() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={goToDashboard} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
-      <div className="max-w-6xl mx-auto px-8 py-10">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Esplora appunti</h1>
-        <p className="text-gray-500 mb-6">Trova gli appunti che ti servono</p>
+    <Layout>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Esplora appunti</h1>
+        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 28 }}>Trova gli appunti che ti servono</p>
 
         <input
           type="text"
-          placeholder="Cerca per titolo, materia o universita..."
+          placeholder="Cerca per titolo, materia o università..."
           value={search}
-          onChange={updateSearch}
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-8 text-sm focus:outline-none focus:border-blue-500 max-w-xl"
+          onChange={e => setSearch(e.target.value)}
+          style={{ width: '100%', maxWidth: 480, border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 32, background: 'white' }}
         />
 
-        {loading && <p className="text-gray-500">Caricamento...</p>}
-        {!loading && filteredNotes.length === 0 && <p className="text-gray-500">Nessun appunto trovato</p>}
+        {loading && <p style={{ color: '#9CA3AF' }}>Caricamento...</p>}
+        {!loading && filteredNotes.length === 0 && <p style={{ color: '#9CA3AF' }}>Nessun appunto trovato</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
           {filteredNotes.map(function (note) {
-            const prezzoLabel = note.prezzo > 0 ? ('€ ' + note.prezzo.toFixed(2)) : 'Gratis'
             const inCorso = acquistoInCorso === note.id
             return (
-              <div key={note.id} className="bg-white rounded-2xl border border-gray-100 p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-full">{note.materia}</span>
-                  <span className="font-bold text-gray-900">{prezzoLabel}</span>
+              <div key={note.id} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, background: '#EFF6FF', color: '#185FA5', padding: '2px 10px', borderRadius: 20 }}>{note.materia}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{note.prezzo > 0 ? `€ ${note.prezzo.toFixed(2)}` : 'Gratis'}</span>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">{note.titolo}</h3>
-                <p className="text-sm text-gray-500 mb-2">{note.descrizione}</p>
-                <p className="text-xs text-gray-400 mb-2">{note.universita}</p>
-                <p className="text-yellow-400 text-sm mb-4">
-                  {renderStelle(note.votoMedio)} <span className="text-gray-400">({note.numeroRecensioni})</span>
-                </p>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{note.titolo}</h3>
+                <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 6, lineHeight: 1.5 }}>{note.descrizione}</p>
+                <p style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 8 }}>{note.universita}</p>
+                <div style={{ fontSize: 12, color: '#B45309', marginBottom: 14 }}>
+                  {renderStelle(note.votoMedio)} <span style={{ color: '#9CA3AF' }}>({note.numeroRecensioni})</span>
+                </div>
                 <button
-                  onClick={function () { gestisciAcquisto(note) }}
+                  onClick={() => gestisciAcquisto(note)}
                   disabled={inCorso}
-                  className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-2"
+                  style={{ width: '100%', background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', marginBottom: 8, opacity: inCorso ? 0.6 : 1 }}
                 >
                   {inCorso ? 'Caricamento...' : (note.prezzo > 0 ? 'Acquista e scarica' : 'Scarica gratis')}
                 </button>
                 <button
-                  onClick={function () { vaiARecensione(note.id) }}
-                  className="w-full border border-gray-200 text-gray-600 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  onClick={() => router.push('/recensione-appunto/' + note.id)}
+                  style={{ width: '100%', background: 'white', color: '#6B7280', border: '0.5px solid #e5e7eb', padding: '8px', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}
                 >
                   Lascia una recensione
                 </button>
@@ -176,6 +149,6 @@ export default function Esplora() {
           })}
         </div>
       </div>
-    </main>
+    </Layout>
   )
 }
