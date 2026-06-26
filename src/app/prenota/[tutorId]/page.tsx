@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
+import Layout from '@/app/components/Layout'
 
 export default function Prenota() {
-  const [tutor, setTutor] = useState<{ email: string; tariffa_oraria: number } | null>(null)
+  const [tutor, setTutor] = useState<{ nome: string; email: string; tariffa_oraria: number } | null>(null)
   const [data, setData] = useState('')
   const [ora, setOra] = useState('')
   const [materia, setMateria] = useState('')
@@ -18,98 +19,61 @@ export default function Prenota() {
 
   useEffect(() => {
     async function caricaTutor() {
-      const result = await supabase.from('profiles').select('email, tariffa_oraria').eq('id', tutorId).single()
-      if (result.data) {
-        setTutor(result.data)
-      }
+      const result = await supabase.from('profiles').select('nome, cognome, email, tariffa_oraria').eq('id', tutorId).single()
+      if (result.data) setTutor(result.data)
     }
     caricaTutor()
   }, [tutorId])
 
   async function confermaPrenotazione() {
-    if (!data || !ora || !materia) {
-      setError('Compila tutti i campi')
-      return
-    }
+    if (!data || !ora || !materia) { setError('Compila tutti i campi'); return }
     setLoading(true)
     setError('')
-
     const userData = await supabase.auth.getUser()
-    if (!userData.data.user) {
-      setError('Devi accedere prima')
-      setLoading(false)
-      return
-    }
-
-    const dataOraCompleta = data + 'T' + ora + ':00'
-
+    if (!userData.data.user) { setError('Devi accedere prima'); setLoading(false); return }
     const result = await supabase.from('tutoring_sessions').insert({
       tutor_id: tutorId,
       studente_id: userData.data.user.id,
-      materia: materia,
-      data_ora: dataOraCompleta,
+      materia,
+      data_ora: data + 'T' + ora + ':00',
       durata_minuti: 60,
       prezzo: tutor ? tutor.tariffa_oraria : 0,
       stato: 'pending'
     })
-
-    if (result.error) {
-      setError('Errore nella prenotazione: ' + result.error.message)
-    } else {
-      setSuccess(true)
-      setTimeout(() => router.push('/dashboard'), 1500)
-    }
+    if (result.error) { setError('Errore: ' + result.error.message) }
+    else { setSuccess(true); setTimeout(() => router.push('/sessioni'), 1500) }
     setLoading(false)
   }
 
-  function goToDashboard() {
-    router.push('/dashboard')
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' } as React.CSSProperties
+
+  function nomeVisibile() {
+    if (!tutor) return ''
+    if ((tutor as any).nome && (tutor as any).cognome) return (tutor as any).nome + ' ' + (tutor as any).cognome
+    if ((tutor as any).nome) return (tutor as any).nome
+    return tutor.email
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={goToDashboard} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
-      <div className="max-w-xl mx-auto px-8 py-10">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Prenota ripetizione</h1>
-          {tutor && <p className="text-gray-500 mb-6">Con {tutor.email} - € {tutor.tariffa_oraria.toFixed(2)}/ora</p>}
+    <Layout>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 32px' }}>
+        <button onClick={() => router.push('/tutor')} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 13, cursor: 'pointer', marginBottom: 6 }}>← Torna ai tutor</button>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>📅 Prenota ripetizione</h1>
+        {tutor && <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32 }}>Con {nomeVisibile()} · € {tutor.tariffa_oraria?.toFixed(2)}/ora</p>}
 
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-          {success && <p className="text-green-500 text-sm mb-4">Prenotazione inviata! Aspetta la conferma del tutor.</p>}
+        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
+          {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16, background: '#FEF2F2', padding: '10px 14px', borderRadius: 8 }}>{error}</p>}
+          {success && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16, background: '#ECFDF5', padding: '10px 14px', borderRadius: 8 }}>✓ Prenotazione inviata! Aspetta la conferma del tutor.</p>}
 
-          <input
-            type="text"
-            placeholder="Materia da studiare"
-            value={materia}
-            onChange={function (e) { setMateria(e.target.value) }}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <input
-            type="date"
-            value={data}
-            onChange={function (e) { setData(e.target.value) }}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <input
-            type="time"
-            value={ora}
-            onChange={function (e) { setOra(e.target.value) }}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <button
-            onClick={confermaPrenotazione}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
+          <input type="text" placeholder="Materia da studiare" value={materia} onChange={e => setMateria(e.target.value)} style={inputStyle} />
+          <input type="date" value={data} onChange={e => setData(e.target.value)} style={inputStyle} />
+          <input type="time" value={ora} onChange={e => setOra(e.target.value)} style={inputStyle} />
+
+          <button onClick={confermaPrenotazione} disabled={loading} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 13, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
             {loading ? 'Prenotazione in corso...' : 'Prenota sessione'}
           </button>
         </div>
       </div>
-    </main>
+    </Layout>
   )
 }
