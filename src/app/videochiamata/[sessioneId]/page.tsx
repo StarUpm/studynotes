@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 
@@ -21,11 +21,10 @@ export default function Videochiamata() {
         return
       }
 
-      const sessioneResult = await supabase
-        .from('tutoring_sessions')
-        .select('*')
-        .eq('id', sessioneId)
-        .single()
+      const [sessioneResult, profiloResult] = await Promise.all([
+        supabase.from('tutoring_sessions').select('*').eq('id', sessioneId).single(),
+        supabase.from('profiles').select('nome, cognome').eq('id', userData.data.user.id).single()
+      ])
 
       if (!sessioneResult.data) {
         setErrore('Sessione non trovata')
@@ -33,6 +32,7 @@ export default function Videochiamata() {
       }
 
       const sessione = sessioneResult.data
+      const profilo = profiloResult.data
       let ruoloLocale = ''
 
       if (sessione.tutor_id === userData.data.user.id) {
@@ -46,36 +46,48 @@ export default function Videochiamata() {
         return
       }
 
-      if (sessione.link_videochiamata) {
-        setRoomUrl(sessione.link_videochiamata)
-        setMessaggioStato('')
-        registraEvento('entrato', ruoloLocale, sessioneId)
-        return
-      }
-
-      try {
-        const response = await fetch('/api/create-room', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessioneId: sessioneId })
-        })
-        const data = await response.json()
-
-        if (data.url) {
-          await supabase
-            .from('tutoring_sessions')
-            .update({ link_videochiamata: data.url })
-            .eq('id', sessioneId)
-
-          setRoomUrl(data.url)
-          setMessaggioStato('')
-          registraEvento('entrato', ruoloLocale, sessioneId)
+      let nomeUtente = 'Utente'
+      if (profilo) {
+        if (profilo.nome && profilo.cognome) {
+          nomeUtente = profilo.nome + ' ' + profilo.cognome
+        } else if (profilo.nome) {
+          nomeUtente = profilo.nome
         } else {
-          setErrore('Errore nella creazione della stanza video')
+          nomeUtente = userData.data.user.email || 'Utente'
         }
-      } catch (e) {
-        setErrore('Errore di connessione')
       }
+
+      let urlBase = sessione.link_videochiamata
+
+      if (!urlBase) {
+        try {
+          const response = await fetch('/api/create-room', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessioneId: sessioneId })
+          })
+          const data = await response.json()
+
+          if (data.url) {
+            await supabase
+              .from('tutoring_sessions')
+              .update({ link_videochiamata: data.url })
+              .eq('id', sessioneId)
+            urlBase = data.url
+          } else {
+            setErrore('Errore nella creazione della stanza video')
+            return
+          }
+        } catch (e) {
+          setErrore('Errore di connessione')
+          return
+        }
+      }
+
+      const urlConNome = urlBase + '?displayName=' + encodeURIComponent(nomeUtente)
+      setRoomUrl(urlConNome)
+      setMessaggioStato('')
+      registraEvento('entrato', ruoloLocale, sessioneId)
     }
 
     inizializza()
