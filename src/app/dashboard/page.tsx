@@ -16,18 +16,16 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
             {[
-              { icon: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi dai tuoi appunti', href: '/quiz', bg: '#EEEDFE' },
+              { icon: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi dai tuoi appunti', href: '/studia', bg: '#EEEDFE' },
               { icon: '🔍', title: 'Esplora appunti', desc: 'Trova materiale di altri studenti', href: '/esplora', bg: '#EFF6FF' },
               { icon: '📝', title: 'Carica appunti', desc: 'Condividi e guadagna dai tuoi materiali', href: '/upload', bg: '#ECFDF5' },
             ].map(function(item) {
               return (
                 <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12, float: 'left', marginRight: 0 }}>{item.icon}</div>
-                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16 }}>›</span>
-                  <div style={{ clear: 'both', paddingTop: 0 }}>
-                    <h3 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{item.title}</h3>
-                    <p style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>{item.desc}</p>
-                  </div>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12 }}>{item.icon}</div>
+                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16, marginTop: -40 }}>›</span>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{item.title}</h3>
+                  <p style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>{item.desc}</p>
                 </Link>
               )
             })}
@@ -49,7 +47,7 @@ export default function Dashboard() {
               return (
                 <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12 }}>{item.icon}</div>
-                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16, marginTop: -32 }}>›</span>
+                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16, marginTop: -40 }}>›</span>
                   <h3 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{item.title}</h3>
                   <p style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>{item.desc}</p>
                 </Link>
@@ -65,25 +63,10 @@ export default function Dashboard() {
             <span style={{ fontSize: 12, color: '#9CA3AF' }}>Prossime sessioni programmate</span>
           </div>
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { mese: 'GIU', giorno: '27', materia: 'Analisi Matematica', info: '15:00 · con Marco R. · € 18,00' },
-              { mese: 'GIU', giorno: '29', materia: 'Diritto Privato', info: '10:00 · con Sara F. · € 20,00' },
-            ].map(function(s) {
-              return (
-                <div key={s.materia} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: '#f9fafb', borderRadius: 10, padding: 14 }}>
-                  <div style={{ background: '#EFF6FF', borderRadius: 10, padding: '8px 12px', textAlign: 'center', minWidth: 48 }}>
-                    <div style={{ fontSize: 10, color: '#185FA5', fontWeight: 600, textTransform: 'uppercase' }}>{s.mese}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: '#185FA5' }}>{s.giorno}</div>
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 3 }}>{s.materia}</h4>
-                    <p style={{ fontSize: 11, color: '#9CA3AF' }}>{s.info}</p>
-                    <span style={{ fontSize: 11, background: '#ECFDF5', color: '#059669', padding: '2px 8px', borderRadius: 20, display: 'inline-block', marginTop: 6 }}>Confermata</span>
-                  </div>
-                </div>
-              )
-            })}
-            <div style={{ textAlign: 'center', paddingTop: 4 }}>
+            <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: '12px 0' }}>
+              Nessuna sessione programmata — <Link href="/tutor" style={{ color: '#185FA5', textDecoration: 'none' }}>trova un tutor</Link> per prenotarne una!
+            </p>
+            <div style={{ textAlign: 'center' }}>
               <Link href="/sessioni" style={{ fontSize: 12, color: '#185FA5', textDecoration: 'none' }}>Vedi tutte le sessioni →</Link>
             </div>
           </div>
@@ -121,8 +104,8 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {[
               { icon: '📤', title: 'Carica PDF', desc: 'Nuovo appunto', href: '/upload', bg: '#EFF6FF' },
-              { icon: '⚡', title: 'Genera quiz', desc: "Con l'AI", href: '/quiz', bg: '#EEEDFE' },
-              { icon: '📋', title: 'Recensisci', desc: 'Tutor o appunti', href: '/esplora', bg: '#ECFDF5' },
+              { icon: '⚡', title: 'Genera quiz', desc: "Con l'AI", href: '/studia/quiz', bg: '#EEEDFE' },
+              { icon: '🃏', title: 'Flashcard', desc: 'Ripassa con le carte', href: '/studia/flashcard', bg: '#ECFDF5' },
               { icon: '👤', title: 'Il mio profilo', desc: 'Modifica dati', href: '/profilo-utente', bg: '#FFFBEB' },
             ].map(function(item) {
               return (
