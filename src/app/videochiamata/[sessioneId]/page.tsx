@@ -142,9 +142,18 @@ export default function Videochiamata() {
 
       {roomUrl && (
         <iframe
-          src={roomUrl}
+          src={roomUrl + '&skipMediaPermissionPrompt&callType=audio_video&leaveButton=off'}
           allow="camera; microphone; fullscreen; speaker; display-capture"
           style={{ flex: 1, width: '100%', border: 'none' }}
+          onLoad={function(e) {
+            const iframe = e.target as HTMLIFrameElement
+            window.addEventListener('message', function(event) {
+              if (event.origin.includes('whereby.com') && event.data && event.data.type === 'whereby.on_meeting_end') {
+                registraEvento('uscito', ruolo, sessioneId)
+                router.push('/sessioni')
+              }
+            })
+          }}
         />
       )}
     </main>
