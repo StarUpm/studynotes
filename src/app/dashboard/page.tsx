@@ -6,59 +6,139 @@ import Layout from '@/app/components/Layout'
 export default function Dashboard() {
   return (
     <Layout>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 32 }}>Benvenuto! 👋</h1>
+      <div style={{ background: '#f9fafb', padding: '32px', maxWidth: 1100, margin: '0 auto' }}>
 
-        {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
-          {[
-            { label: 'Appunti caricati', value: '0' },
-            { label: 'Guadagni totali', value: '€ 0' },
-            { label: 'Quiz completati', value: '0' },
-            { label: 'Ripetizioni', value: '0' },
-          ].map(function(s) {
-            return (
-              <div key={s.label} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
-                <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>{s.label}</p>
-                <p style={{ fontSize: 28, fontWeight: 700, color: '#111827' }}>{s.value}</p>
-              </div>
-            )
-          })}
+        {/* STUDIA */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Studia</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Strumenti AI e materiali</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            {[
+              { icon: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi dai tuoi appunti', href: '/quiz', bg: '#EEEDFE' },
+              { icon: '🔍', title: 'Esplora appunti', desc: 'Trova materiale di altri studenti', href: '/esplora', bg: '#EFF6FF' },
+              { icon: '📝', title: 'Carica appunti', desc: 'Condividi e guadagna dai tuoi materiali', href: '/upload', bg: '#ECFDF5' },
+            ].map(function(item) {
+              return (
+                <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12, float: 'left', marginRight: 0 }}>{item.icon}</div>
+                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16 }}>›</span>
+                  <div style={{ clear: 'both', paddingTop: 0 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{item.title}</h3>
+                    <p style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>{item.desc}</p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
 
-        {/* AZIONI PRINCIPALI */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
-          {[
-            { emoji: '📝', title: 'Carica appunti', desc: 'Vendi i tuoi appunti e guadagna', href: '/upload' },
-            { emoji: '🔍', title: 'Esplora appunti', desc: 'Trova appunti di altri studenti', href: '/esplora' },
-            { emoji: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi dai tuoi appunti', href: '/quiz' },
-          ].map(function(item) {
-            return (
-              <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, textDecoration: 'none', display: 'block', transition: 'border-color 0.2s' }}>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{item.emoji}</div>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 6 }}>{item.title}</h3>
-                <p style={{ fontSize: 12, color: '#6B7280' }}>{item.desc}</p>
-              </Link>
-            )
-          })}
+        {/* RIPETIZIONI */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Ripetizioni</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Tutor e sessioni</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            {[
+              { icon: '🎓', title: 'Trova un tutor', desc: 'Prenota ripetizioni online quando vuoi', href: '/tutor', bg: '#FFFBEB' },
+              { icon: '👨‍🏫', title: 'Diventa tutor', desc: 'Offri ripetizioni e guadagna', href: '/diventa-tutor', bg: '#F0FDFA' },
+              { icon: '📅', title: 'Le mie sessioni', desc: 'Gestisci prenotazioni e videochiamate', href: '/sessioni', bg: '#EEF2FF' },
+            ].map(function(item) {
+              return (
+                <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12 }}>{item.icon}</div>
+                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16, marginTop: -32 }}>›</span>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{item.title}</h3>
+                  <p style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>{item.desc}</p>
+                </Link>
+              )
+            })}
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-          {[
-            { emoji: '🎓', title: 'Trova un tutor', desc: 'Prenota ripetizioni online', href: '/tutor' },
-            { emoji: '👨‍🏫', title: 'Diventa tutor', desc: 'Offri ripetizioni e guadagna', href: '/diventa-tutor' },
-            { emoji: '📅', title: 'Le mie sessioni', desc: 'Gestisci le tue prenotazioni', href: '/sessioni' },
-            { emoji: '👤', title: 'Il mio profilo', desc: 'Saldo, acquisti e dati personali', href: '/profilo-utente' },
-          ].map(function(item) {
-            return (
-              <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, textDecoration: 'none', display: 'block' }}>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{item.emoji}</div>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 6 }}>{item.title}</h3>
-                <p style={{ fontSize: 12, color: '#6B7280' }}>{item.desc}</p>
-              </Link>
-            )
-          })}
+        {/* CALENDARIO */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Calendario</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Prossime sessioni programmate</span>
+          </div>
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { mese: 'GIU', giorno: '27', materia: 'Analisi Matematica', info: '15:00 · con Marco R. · € 18,00' },
+              { mese: 'GIU', giorno: '29', materia: 'Diritto Privato', info: '10:00 · con Sara F. · € 20,00' },
+            ].map(function(s) {
+              return (
+                <div key={s.materia} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: '#f9fafb', borderRadius: 10, padding: 14 }}>
+                  <div style={{ background: '#EFF6FF', borderRadius: 10, padding: '8px 12px', textAlign: 'center', minWidth: 48 }}>
+                    <div style={{ fontSize: 10, color: '#185FA5', fontWeight: 600, textTransform: 'uppercase' }}>{s.mese}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#185FA5' }}>{s.giorno}</div>
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 3 }}>{s.materia}</h4>
+                    <p style={{ fontSize: 11, color: '#9CA3AF' }}>{s.info}</p>
+                    <span style={{ fontSize: 11, background: '#ECFDF5', color: '#059669', padding: '2px 8px', borderRadius: 20, display: 'inline-block', marginTop: 6 }}>Confermata</span>
+                  </div>
+                </div>
+              )
+            })}
+            <div style={{ textAlign: 'center', paddingTop: 4 }}>
+              <Link href="/sessioni" style={{ fontSize: 12, color: '#185FA5', textDecoration: 'none' }}>Vedi tutte le sessioni →</Link>
+            </div>
+          </div>
         </div>
+
+        {/* SALDO */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Il mio saldo</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Guadagni e spese</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+            {[
+              { label: 'Guadagni totali', value: '€ 0,00', color: '#185FA5', sub: 'Al netto del 20%' },
+              { label: 'Da vendita appunti', value: '€ 0,00', color: '#111827', sub: '0 vendite' },
+              { label: 'Da sessioni tutor', value: '€ 0,00', color: '#111827', sub: '0 sessioni completate' },
+              { label: 'Acquisti effettuati', value: '€ 0,00', color: '#DC2626', sub: '0 appunti acquistati' },
+            ].map(function(s) {
+              return (
+                <div key={s.label} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>{s.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.sub}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* AZIONI RAPIDE */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Azioni rapide</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+            {[
+              { icon: '📤', title: 'Carica PDF', desc: 'Nuovo appunto', href: '/upload', bg: '#EFF6FF' },
+              { icon: '⚡', title: 'Genera quiz', desc: "Con l'AI", href: '/quiz', bg: '#EEEDFE' },
+              { icon: '📋', title: 'Recensisci', desc: 'Tutor o appunti', href: '/esplora', bg: '#ECFDF5' },
+              { icon: '👤', title: 'Il mio profilo', desc: 'Modifica dati', href: '/profilo-utente', bg: '#FFFBEB' },
+            ].map(function(item) {
+              return (
+                <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{item.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>{item.title}</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>{item.desc}</div>
+                  </div>
+                  <span style={{ marginLeft: 'auto', color: '#d1d5db', fontSize: 14 }}>›</span>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
       </div>
     </Layout>
   )
