@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Layout from '@/app/components/Layout'
 
 type Domanda = {
   domanda: string
@@ -32,50 +32,26 @@ export default function Quiz() {
   const [loadingFile, setLoadingFile] = useState(false)
   const [error, setError] = useState('')
   const [rispostePresenti, setRispostePresenti] = useState<number[]>([])
-  const router = useRouter()
-
-  function goToDashboard() {
-    router.push('/dashboard')
-  }
-
-  function updateTesto(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setTestoManuale(e.target.value)
-  }
 
   async function updateFile(e: React.ChangeEvent<HTMLInputElement>) {
     const fileSelezionato = e.target.files ? e.target.files[0] : null
     setFile(fileSelezionato)
     if (!fileSelezionato) return
-
     setLoadingFile(true)
     setError('')
-
     try {
       const formData = new FormData()
       formData.append('file', fileSelezionato)
-
-      const response = await fetch('/api/estrai-testo', {
-        method: 'POST',
-        body: formData
-      })
+      const response = await fetch('/api/estrai-testo', { method: 'POST', body: formData })
       const data = await response.json()
-
-      if (data.testo) {
-        setTestoManuale(data.testo)
-      } else {
-        setError(data.error || 'Errore nella lettura del file')
-      }
-    } catch (e) {
-      setError('Errore nel caricamento del file')
-    }
+      if (data.testo) { setTestoManuale(data.testo) }
+      else { setError(data.error || 'Errore nella lettura del file') }
+    } catch (e) { setError('Errore nel caricamento del file') }
     setLoadingFile(false)
   }
 
   async function generaContenuto() {
-    if (testoManuale.length < 50) {
-      setError('Carica un file oppure inserisci almeno 50 caratteri di testo')
-      return
-    }
+    if (testoManuale.length < 50) { setError('Carica un file oppure inserisci almeno 50 caratteri'); return }
     setLoading(true)
     setError('')
     setQuiz([])
@@ -83,47 +59,20 @@ export default function Quiz() {
     setSchema(null)
     setRispostePresenti([])
     setFlashcardGirate([])
-
     try {
-      let endpoint = '/api/generate-quiz'
-      if (tabAttivo === 'flashcard') endpoint = '/api/generate-flashcard'
-      if (tabAttivo === 'schema') endpoint = '/api/generate-schema'
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testo: testoManuale })
-      })
+      const endpoint = tabAttivo === 'flashcard' ? '/api/generate-flashcard' : tabAttivo === 'schema' ? '/api/generate-schema' : '/api/generate-quiz'
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testo: testoManuale }) })
       const data = await response.json()
-
-      if (tabAttivo === 'quiz' && data.quiz) {
-        setQuiz(data.quiz)
-        setRispostePresenti(new Array(data.quiz.length).fill(-1))
-      } else if (tabAttivo === 'flashcard' && data.flashcard) {
-        setFlashcards(data.flashcard)
-      } else if (tabAttivo === 'schema' && data.schema) {
-        setSchema(data.schema)
-      } else {
-        setError(data.error || 'Errore nella generazione')
-      }
-    } catch (e) {
-      setError('Errore di connessione')
-    }
+      if (tabAttivo === 'quiz' && data.quiz) { setQuiz(data.quiz); setRispostePresenti(new Array(data.quiz.length).fill(-1)) }
+      else if (tabAttivo === 'flashcard' && data.flashcard) { setFlashcards(data.flashcard) }
+      else if (tabAttivo === 'schema' && data.schema) { setSchema(data.schema) }
+      else { setError(data.error || 'Errore nella generazione') }
+    } catch (e) { setError('Errore di connessione') }
     setLoading(false)
   }
 
-  function selezionaRisposta(indiceDomanda: number, indiceRisposta: number) {
-    const nuove = [...rispostePresenti]
-    nuove[indiceDomanda] = indiceRisposta
-    setRispostePresenti(nuove)
-  }
-
-  function giraFlashcard(indice: number) {
-    if (flashcardGirate.includes(indice)) {
-      setFlashcardGirate(flashcardGirate.filter(function (i) { return i !== indice }))
-    } else {
-      setFlashcardGirate([...flashcardGirate, indice])
-    }
+  function giraFlashcard(i: number) {
+    setFlashcardGirate(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])
   }
 
   function cambiaTab(tab: string) {
@@ -133,118 +82,88 @@ export default function Quiz() {
     setSchema(null)
   }
 
-  return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={goToDashboard} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
-      <div className="max-w-3xl mx-auto px-8 py-10">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Studia con AI</h1>
-        <p className="text-gray-500 mb-6">Genera quiz, flashcard o schemi dai tuoi appunti</p>
+  const tabs = [
+    { id: 'quiz', label: '🧠 Quiz' },
+    { id: 'flashcard', label: '🃏 Flashcard' },
+    { id: 'schema', label: '🗺️ Schema' },
+  ]
 
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={function () { cambiaTab('quiz') }}
-            className={tabAttivo === 'quiz' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm' : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm'}
-          >
-            Quiz
-          </button>
-          <button
-            onClick={function () { cambiaTab('flashcard') }}
-            className={tabAttivo === 'flashcard' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm' : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm'}
-          >
-            Flashcard
-          </button>
-          <button
-            onClick={function () { cambiaTab('schema') }}
-            className={tabAttivo === 'schema' ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm' : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm'}
-          >
-            Schema
-          </button>
+  return (
+    <Layout>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Studia con AI</h1>
+        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 28 }}>Genera quiz, flashcard o schemi dai tuoi appunti</p>
+
+        {/* TAB */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => cambiaTab(t.id)} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', background: tabAttivo === t.id ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tabAttivo === t.id ? 'white' : '#6B7280', boxShadow: tabAttivo === t.id ? 'none' : '0 0 0 0.5px #e5e7eb' }}>
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16 }}>{error}</p>}
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Carica un file (PDF, Word o TXT)</p>
-          <input
-            type="file"
-            accept=".pdf,.docx,.txt"
-            onChange={updateFile}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm"
-          />
-          {loadingFile && <p className="text-sm text-blue-600 mb-2">Lettura del file in corso...</p>}
-          {file && !loadingFile && testoManuale.length > 0 && (
-            <p className="text-sm text-green-600 mb-2">File letto correttamente ({testoManuale.length} caratteri)</p>
-          )}
-
-          <p className="text-sm font-medium text-gray-700 mb-2 mt-4">Oppure incolla il testo direttamente</p>
+        {/* INPUT */}
+        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24, marginBottom: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>Carica un file (PDF, Word o TXT)</p>
+          <div style={{ border: '1px dashed #e5e7eb', borderRadius: 10, padding: 16, background: '#f9fafb', marginBottom: 16, textAlign: 'center' }}>
+            <input type="file" accept=".pdf,.docx,.txt" onChange={updateFile} style={{ fontSize: 13 }} />
+            {loadingFile && <p style={{ fontSize: 12, color: '#185FA5', marginTop: 8 }}>Lettura file in corso...</p>}
+            {file && !loadingFile && testoManuale.length > 0 && (
+              <p style={{ fontSize: 12, color: '#059669', marginTop: 8 }}>File letto: {testoManuale.length} caratteri</p>
+            )}
+          </div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>Oppure incolla il testo</p>
           <textarea
             placeholder="Incolla qui il testo dei tuoi appunti..."
             value={testoManuale}
-            onChange={updateTesto}
+            onChange={e => setTestoManuale(e.target.value)}
             rows={6}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+            style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 13, outline: 'none', resize: 'vertical', lineHeight: 1.6 }}
           />
         </div>
 
         <button
           onClick={generaContenuto}
           disabled={loading || loadingFile}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-8"
+          style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '13px 28px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 32, opacity: (loading || loadingFile) ? 0.7 : 1 }}
         >
-          {loading ? 'Generazione in corso...' : 'Genera ' + tabAttivo}
+          {loading ? 'Generazione in corso...' : `Genera ${tabAttivo}`}
         </button>
 
-        {tabAttivo === 'quiz' && quiz.map(function (domanda, indiceDomanda) {
-          return (
-            <div key={indiceDomanda} className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-              <p className="font-semibold text-gray-900 mb-4">{indiceDomanda + 1}. {domanda.domanda}</p>
-              {domanda.opzioni.map(function (opzione, indiceOpzione) {
-                const selezionata = rispostePresenti[indiceDomanda] === indiceOpzione
-                const corretta = domanda.risposta_corretta === indiceOpzione
-                const haRisposto = rispostePresenti[indiceDomanda] !== -1
-
-                let stile = 'w-full text-left border rounded-lg px-4 py-3 mb-2 text-sm '
-                if (haRisposto && corretta) {
-                  stile += 'border-green-500 bg-green-50 text-green-700'
-                } else if (haRisposto && selezionata && !corretta) {
-                  stile += 'border-red-500 bg-red-50 text-red-700'
-                } else {
-                  stile += 'border-gray-200 hover:border-blue-300'
-                }
-
-                return (
-                  <button
-                    key={indiceOpzione}
-                    onClick={function () { selezionaRisposta(indiceDomanda, indiceOpzione) }}
-                    className={stile}
-                  >
-                    {opzione}
-                  </button>
-                )
-              })}
-              {rispostePresenti[indiceDomanda] !== -1 && (
-                <p className="text-sm text-gray-500 mt-3 italic">{domanda.spiegazione}</p>
-              )}
-            </div>
-          )
-        })}
-
-        {tabAttivo === 'flashcard' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {flashcards.map(function (fc, indice) {
-              const girata = flashcardGirate.includes(indice)
+        {/* QUIZ */}
+        {tabAttivo === 'quiz' && quiz.map((domanda, idx) => (
+          <div key={idx} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, marginBottom: 14 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 16 }}>{idx + 1}. {domanda.domanda}</p>
+            {domanda.opzioni.map((opzione, i) => {
+              const selezionata = rispostePresenti[idx] === i
+              const corretta = domanda.risposta_corretta === i
+              const haRisposto = rispostePresenti[idx] !== -1
+              let bg = 'white', border = '0.5px solid #e5e7eb', color = '#374151'
+              if (haRisposto && corretta) { bg = '#ECFDF5'; border = '1px solid #059669'; color = '#065F46' }
+              else if (haRisposto && selezionata && !corretta) { bg = '#FEF2F2'; border = '1px solid #DC2626'; color = '#991B1B' }
               return (
-                <div
-                  key={indice}
-                  onClick={function () { giraFlashcard(indice) }}
-                  className="bg-white rounded-2xl border border-gray-100 p-6 cursor-pointer min-h-32 flex items-center justify-center text-center hover:border-blue-300"
-                >
-                  <p className={girata ? 'text-sm text-gray-600' : 'font-semibold text-gray-900'}>
+                <button key={i} onClick={() => { const n = [...rispostePresenti]; n[idx] = i; setRispostePresenti(n) }} style={{ width: '100%', textAlign: 'left', border, borderRadius: 8, padding: '11px 16px', marginBottom: 8, fontSize: 13, cursor: 'pointer', background: bg, color }}>
+                  {opzione}
+                </button>
+              )
+            })}
+            {rispostePresenti[idx] !== -1 && (
+              <p style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' }}>{domanda.spiegazione}</p>
+            )}
+          </div>
+        ))}
+
+        {/* FLASHCARD */}
+        {tabAttivo === 'flashcard' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
+            {flashcards.map((fc, i) => {
+              const girata = flashcardGirate.includes(i)
+              return (
+                <div key={i} onClick={() => giraFlashcard(i)} style={{ background: girata ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, cursor: 'pointer', minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, color: girata ? 'white' : '#111827', fontWeight: girata ? 400 : 600, lineHeight: 1.6 }}>
                     {girata ? fc.retro : fc.fronte}
                   </p>
                 </div>
@@ -253,24 +172,23 @@ export default function Quiz() {
           </div>
         )}
 
+        {/* SCHEMA */}
         {tabAttivo === 'schema' && schema && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{schema.titolo}</h2>
-            {schema.sezioni.map(function (sezione, i) {
-              return (
-                <div key={i} className="mb-4">
-                  <p className="font-semibold text-blue-600 mb-2">{sezione.sottotema}</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {sezione.punti.map(function (punto, j) {
-                      return <li key={j} className="text-sm text-gray-600">{punto}</li>
-                    })}
-                  </ul>
-                </div>
-              )
-            })}
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 20 }}>{schema.titolo}</h2>
+            {schema.sezioni.map((sezione, i) => (
+              <div key={i} style={{ marginBottom: 20 }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#185FA5', marginBottom: 8 }}>{sezione.sottotema}</p>
+                <ul style={{ paddingLeft: 20 }}>
+                  {sezione.punti.map((punto, j) => (
+                    <li key={j} style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.7 }}>{punto}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         )}
       </div>
-    </main>
+    </Layout>
   )
 }
