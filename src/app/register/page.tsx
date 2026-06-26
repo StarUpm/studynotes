@@ -14,64 +14,94 @@ export default function Register() {
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
-  const handleRegister = async () => {
+  async function handleRegister() {
+    if (!nome) { setError('Inserisci il tuo nome'); return }
+    if (password.length < 6) { setError('La password deve essere di almeno 6 caratteri'); return }
     setLoading(true)
     setError('')
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { nome }
-      }
+      email, password,
+      options: { data: { nome } }
     })
-    if (error) {
-      setError('Errore durante la registrazione: ' + error.message)
-    } else {
-      setSuccess(true)
-      setTimeout(() => router.push('/dashboard'), 2000)
-    }
+    if (error) { setError('Errore durante la registrazione: ' + error.message) }
+    else { setSuccess(true); setTimeout(() => router.push('/dashboard'), 2000) }
     setLoading(false)
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-2xl border border-gray-100 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Crea il tuo account</h1>
-        <p className="text-gray-500 mb-6">Unisciti a migliaia di studenti su StudyNotes</p>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        {success && <p className="text-green-500 text-sm mb-4">Account creato! Reindirizzamento...</p>}
-        <input
-          type="text"
-          placeholder="Il tuo nome"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-        />
-        <input
-          type="password"
-          placeholder="Password (minimo 6 caratteri)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
-        />
-        <button
-          onClick={handleRegister}
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Registrazione in corso...' : 'Registrati gratis'}
-        </button>
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Hai gia un account?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">Accedi</Link>
-        </p>
+    <main style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
+      <nav style={{ padding: '16px 32px', background: 'white', borderBottom: '0.5px solid #e5e7eb' }}>
+        <Link href="/" style={{ fontSize: 22, fontWeight: 700, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textDecoration: 'none' }}>Klass</Link>
+      </nav>
+
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 32px' }}>
+        <div style={{ width: '100%', maxWidth: 440 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#111827', marginBottom: 8, textAlign: 'center' }}>Crea il tuo account</h1>
+          <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32, textAlign: 'center' }}>Unisciti a migliaia di studenti su Klass</p>
+
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
+            {error && (
+              <div style={{ background: '#FEF2F2', border: '0.5px solid #FECACA', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+                <p style={{ fontSize: 13, color: '#DC2626' }}>{error}</p>
+              </div>
+            )}
+            {success && (
+              <div style={{ background: '#ECFDF5', border: '0.5px solid #A7F3D0', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+                <p style={{ fontSize: 13, color: '#059669' }}>✓ Account creato! Reindirizzamento...</p>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Il tuo nome</label>
+              <input
+                type="text"
+                placeholder="Marco"
+                value={nome}
+                onChange={e => setNome(e.target.value)}
+                style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Email</label>
+              <input
+                type="email"
+                placeholder="la-tua@email.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Password</label>
+              <input
+                type="password"
+                placeholder="Minimo 6 caratteri"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }}
+              />
+            </div>
+
+            <button
+              onClick={handleRegister}
+              disabled={loading}
+              style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 13, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? 'Registrazione in corso...' : 'Registrati gratis'}
+            </button>
+
+            <p style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', marginTop: 20 }}>
+              Hai già un account?{' '}
+              <Link href="/login" style={{ color: '#185FA5', textDecoration: 'none', fontWeight: 600 }}>Accedi</Link>
+            </p>
+          </div>
+
+          <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginTop: 16 }}>
+            Registrandoti accetti i nostri <Link href="#" style={{ color: '#185FA5', textDecoration: 'none' }}>Termini e condizioni</Link>
+          </p>
+        </div>
       </div>
     </main>
   )
