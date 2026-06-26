@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/app/components/Layout'
 
 export default function StudiaFlashcard() {
-  const [numerocarte, setNumeroarte] = useState(20)
+  const [numeroCarte, setNumeroCarte] = useState(20)
   const [modalita, setModalita] = useState('classica')
   const [tipoContenuto, setTipoContenuto] = useState('termine')
   const [sorgente, setSorgente] = useState('file')
@@ -36,7 +36,7 @@ export default function StudiaFlashcard() {
       const res = await fetch('/api/generate-flashcard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testo: testoFinale, numeroarte, tipoContenuto })
+        body: JSON.stringify({ testo: testoFinale, numeroCarte, tipoContenuto })
       })
       const data = await res.json()
 
@@ -88,7 +88,7 @@ export default function StudiaFlashcard() {
           <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>Numero di flashcard</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
             {[10, 20, 30, 50].map(n => (
-              <button key={n} onClick={() => setNumeroarte(n)} style={chipStyle(numeroarte === n)}>
+              <button key={n} onClick={() => setNumeroCarte(n)} style={chipStyle(numeroCarte === n)}>
                 {n} carte
               </button>
             ))}
