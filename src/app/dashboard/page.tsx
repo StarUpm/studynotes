@@ -32,17 +32,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* RIPETIZIONI */}
+        {/* RIPETIZIONI E CHAT */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Ripetizioni</span>
-            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Tutor e sessioni</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Ripetizioni e comunicazione</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Tutor, sessioni e chat</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {[
-              { icon: '🎓', title: 'Trova un tutor', desc: 'Prenota ripetizioni online quando vuoi', href: '/tutor', bg: '#FFFBEB' },
+              { icon: '🎓', title: 'Trova un tutor', desc: 'Prenota ripetizioni online', href: '/tutor', bg: '#FFFBEB' },
               { icon: '👨‍🏫', title: 'Diventa tutor', desc: 'Offri ripetizioni e guadagna', href: '/diventa-tutor', bg: '#F0FDFA' },
-              { icon: '📅', title: 'Le mie sessioni', desc: 'Gestisci prenotazioni e videochiamate', href: '/sessioni', bg: '#EEF2FF' },
+              { icon: '📅', title: 'Le mie sessioni', desc: 'Gestisci prenotazioni', href: '/sessioni', bg: '#EEF2FF' },
+              { icon: '💬', title: 'Messaggi', desc: 'Chatta con studenti e tutor', href: '/chat', bg: '#FDF2F8' },
             ].map(function(item) {
               return (
                 <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
@@ -105,7 +106,7 @@ export default function Dashboard() {
             {[
               { icon: '📤', title: 'Carica PDF', desc: 'Nuovo appunto', href: '/upload', bg: '#EFF6FF' },
               { icon: '⚡', title: 'Genera quiz', desc: "Con l'AI", href: '/studia/quiz', bg: '#EEEDFE' },
-              { icon: '🃏', title: 'Flashcard', desc: 'Ripassa con le carte', href: '/studia/flashcard', bg: '#ECFDF5' },
+              { icon: '💬', title: 'Nuova chat', desc: 'Scrivi un messaggio', href: '/chat', bg: '#FDF2F8' },
               { icon: '👤', title: 'Il mio profilo', desc: 'Modifica dati', href: '/profilo-utente', bg: '#FFFBEB' },
             ].map(function(item) {
               return (
