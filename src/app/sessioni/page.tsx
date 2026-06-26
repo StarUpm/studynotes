@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Layout from '@/app/components/Layout'
 
 type Sessione = {
   id: string
@@ -21,138 +22,120 @@ export default function Sessioni() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  useEffect(() => {
-    fetchSessioni()
-  }, [])
+  useEffect(() => { fetchSessioni() }, [])
 
   async function fetchSessioni() {
     const userData = await supabase.auth.getUser()
-    if (!userData.data.user) {
-      setLoading(false)
-      return
-    }
-
-    const comeStudente = await supabase
-      .from('tutoring_sessions')
-      .select('*')
-      .eq('studente_id', userData.data.user.id)
-      .order('data_ora', { ascending: true })
-
-    const comeTutor = await supabase
-      .from('tutoring_sessions')
-      .select('*')
-      .eq('tutor_id', userData.data.user.id)
-      .order('data_ora', { ascending: true })
-
+    if (!userData.data.user) { setLoading(false); return }
+    const comeStudente = await supabase.from('tutoring_sessions').select('*').eq('studente_id', userData.data.user.id).order('data_ora', { ascending: true })
+    const comeTutor = await supabase.from('tutoring_sessions').select('*').eq('tutor_id', userData.data.user.id).order('data_ora', { ascending: true })
     if (comeStudente.data) setSessioniComeStudente(comeStudente.data)
     if (comeTutor.data) setSessioniComeTutor(comeTutor.data)
     setLoading(false)
   }
 
-  async function confermaSessione(sessioneId: string) {
-    await supabase.from('tutoring_sessions').update({ stato: 'confermata' }).eq('id', sessioneId)
+  async function confermaSessione(id: string) {
+    await supabase.from('tutoring_sessions').update({ stato: 'confermata' }).eq('id', id)
     fetchSessioni()
   }
 
-  async function rifiutaSessione(sessioneId: string) {
-    await supabase.from('tutoring_sessions').update({ stato: 'rifiutata' }).eq('id', sessioneId)
+  async function rifiutaSessione(id: string) {
+    await supabase.from('tutoring_sessions').update({ stato: 'rifiutata' }).eq('id', id)
     fetchSessioni()
   }
 
-  function entraInVideochiamata(sessioneId: string) {
-    router.push('/videochiamata/' + sessioneId)
-  }
-
-  function goToDashboard() {
-    router.push('/dashboard')
-  }
-
-  function formattaData(dataString: string) {
-    const d = new Date(dataString)
-    return d.toLocaleDateString('it-IT') + ' alle ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  function formattaData(d: string) {
+    const data = new Date(d)
+    return data.toLocaleDateString('it-IT') + ' alle ' + data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   }
 
   function coloreStato(stato: string) {
-    if (stato === 'confermata') return 'bg-green-50 text-green-600'
-    if (stato === 'completata') return 'bg-blue-50 text-blue-600'
-    if (stato === 'rifiutata') return 'bg-red-50 text-red-600'
-    return 'bg-yellow-50 text-yellow-600'
+    if (stato === 'confermata') return { bg: '#ECFDF5', color: '#059669' }
+    if (stato === 'completata') return { bg: '#EFF6FF', color: '#185FA5' }
+    if (stato === 'rifiutata') return { bg: '#FEF2F2', color: '#DC2626' }
+    return { bg: '#FFFBEB', color: '#B45309' }
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={goToDashboard} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
-      <div className="max-w-4xl mx-auto px-8 py-10">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Le mie sessioni</h1>
+    <Layout>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Le mie sessioni</h1>
+        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32 }}>Gestisci le tue prenotazioni e videochiamate</p>
 
-        {loading && <p className="text-gray-500">Caricamento...</p>}
+        {loading && <p style={{ color: '#9CA3AF' }}>Caricamento...</p>}
 
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sessioni come studente</h2>
-        {sessioniComeStudente.length === 0 && <p className="text-gray-500 mb-8">Nessuna sessione prenotata</p>}
-        <div className="space-y-3 mb-10">
-          {sessioniComeStudente.map(function (s) {
-            return (
-              <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-gray-900">{s.materia}</p>
-                  <p className="text-sm text-gray-500">{formattaData(s.data_ora)}</p>
-                  <p className="text-sm text-gray-500">€ {s.prezzo.toFixed(2)}</p>
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 14 }}>Sessioni come studente</h2>
+          {sessioniComeStudente.length === 0 && !loading && (
+            <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: '#9CA3AF' }}>Nessuna sessione prenotata — <span onClick={() => router.push('/tutor')} style={{ color: '#185FA5', cursor: 'pointer' }}>trova un tutor</span></p>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sessioniComeStudente.map(function(s) {
+              const c = coloreStato(s.stato)
+              return (
+                <div key={s.id} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{s.materia}</p>
+                    <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 2 }}>{formattaData(s.data_ora)}</p>
+                    <p style={{ fontSize: 12, color: '#9CA3AF' }}>€ {s.prezzo?.toFixed(2)}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {s.stato === 'confermata' && (
+                      <button onClick={() => router.push('/videochiamata/' + s.id)} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        Entra in videochiamata
+                      </button>
+                    )}
+                    <span style={{ fontSize: 11, background: c.bg, color: c.color, padding: '4px 12px', borderRadius: 20 }}>{s.stato}</span>
+                  </div>
                 </div>
-                {s.stato === 'confermata' ? (
-                  <button
-                    onClick={function () { entraInVideochiamata(s.id) }}
-                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    Entra in videochiamata
-                  </button>
-                ) : (
-                  <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
-                )}
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sessioni come tutor</h2>
-        {sessioniComeTutor.length === 0 && <p className="text-gray-500">Nessuna richiesta ricevuta</p>}
-        <div className="space-y-3">
-          {sessioniComeTutor.map(function (s) {
-            return (
-              <div key={s.id} className="bg-white rounded-2xl border border-gray-100 p-5 flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-gray-900">{s.materia}</p>
-                  <p className="text-sm text-gray-500">{formattaData(s.data_ora)}</p>
-                  <p className="text-sm text-gray-500">€ {s.prezzo.toFixed(2)}</p>
-                </div>
-                {s.stato === 'pending' ? (
-                  <div className="flex gap-2">
-                    <button onClick={function () { confermaSessione(s.id) }} className="bg-green-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-green-700">
-                      Conferma
-                    </button>
-                    <button onClick={function () { rifiutaSessione(s.id) }} className="bg-red-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-red-700">
-                      Rifiuta
-                    </button>
+        <div>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 14 }}>Sessioni come tutor</h2>
+          {sessioniComeTutor.length === 0 && !loading && (
+            <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: '#9CA3AF' }}>Nessuna richiesta ricevuta ancora</p>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sessioniComeTutor.map(function(s) {
+              const c = coloreStato(s.stato)
+              return (
+                <div key={s.id} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{s.materia}</p>
+                    <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 2 }}>{formattaData(s.data_ora)}</p>
+                    <p style={{ fontSize: 12, color: '#9CA3AF' }}>€ {s.prezzo?.toFixed(2)}</p>
                   </div>
-                ) : s.stato === 'confermata' ? (
-                  <button
-                    onClick={function () { entraInVideochiamata(s.id) }}
-                    className="bg-blue-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    Entra in videochiamata
-                  </button>
-                ) : (
-                  <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
-                )}
-              </div>
-            )
-          })}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {s.stato === 'pending' && (
+                      <>
+                        <button onClick={() => confermaSessione(s.id)} style={{ background: '#ECFDF5', color: '#059669', border: '0.5px solid #A7F3D0', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          Conferma
+                        </button>
+                        <button onClick={() => rifiutaSessione(s.id)} style={{ background: '#FEF2F2', color: '#DC2626', border: '0.5px solid #FECACA', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          Rifiuta
+                        </button>
+                      </>
+                    )}
+                    {s.stato === 'confermata' && (
+                      <button onClick={() => router.push('/videochiamata/' + s.id)} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        Entra in videochiamata
+                      </button>
+                    )}
+                    <span style={{ fontSize: 11, background: c.bg, color: c.color, padding: '4px 12px', borderRadius: 20 }}>{s.stato}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
-    </main>
+    </Layout>
   )
 }
