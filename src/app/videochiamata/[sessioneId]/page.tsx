@@ -142,7 +142,7 @@ export default function Videochiamata() {
 
       {roomUrl && (
         <iframe
-          src={roomUrl + '&skipMediaPermissionPrompt&callType=audio_video&leaveButton=off'}
+          src={roomUrl + '&skipMediaPermissionPrompt'}
           allow="camera; microphone; fullscreen; speaker; display-capture"
           style={{ flex: 1, width: '100%', border: 'none' }}
           onLoad={function(e) {
