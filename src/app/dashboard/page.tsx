@@ -19,8 +19,7 @@ export default function Dashboard() {
         <div className="flex gap-4 items-center">
           <Link href="/esplora" className="text-sm text-gray-500 hover:text-blue-600">Esplora appunti</Link>
           <Link href="/tutor" className="text-sm text-gray-500 hover:text-blue-600">Trova tutor</Link>
-          <Link href="/modifica-profilo" className="text-sm text-gray-500 hover:text-blue-600">Il mio profilo</Link>
-          <Link href="/account" className="text-sm text-gray-500 hover:text-blue-600">Il mio account</Link>
+          <Link href="/profilo-utente" className="text-sm text-gray-500 hover:text-blue-600">Il mio profilo</Link>
           <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">Esci</button>
         </div>
       </nav>
@@ -77,10 +76,10 @@ export default function Dashboard() {
             <h3 className="font-semibold text-gray-900 mb-2">Le mie sessioni</h3>
             <p className="text-sm text-gray-500">Gestisci le tue prenotazioni</p>
           </Link>
-          <Link href="/account" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
+          <Link href="/profilo-utente" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
             <div className="text-3xl mb-4">👤</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Il mio account</h3>
-            <p className="text-sm text-gray-500">Saldo, acquisti e statistiche</p>
+            <h3 className="font-semibold text-gray-900 mb-2">Il mio profilo</h3>
+            <p className="text-sm text-gray-500">Saldo, acquisti e dati personali</p>
           </Link>
         </div>
       </div>
