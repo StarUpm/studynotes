@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { universita, materie } from '@/lib/dati-universita'
+import Layout from '@/app/components/Layout'
 
 export default function Upload() {
   const [titolo, setTitolo] = useState('')
@@ -20,194 +21,97 @@ export default function Upload() {
   const router = useRouter()
 
   function updateMateria(e: React.ChangeEvent<HTMLInputElement>) {
-    const valore = e.target.value
-    setMateria(valore)
-    if (valore.length > 0) {
-      const filtrati = materie.filter(function (m) {
-        return m.toLowerCase().includes(valore.toLowerCase())
-      })
-      setSuggerimentiMateria(filtrati.slice(0, 6))
-    } else {
-      setSuggerimentiMateria([])
-    }
-  }
-
-  function selezionaMateria(valore: string) {
-    setMateria(valore)
-    setSuggerimentiMateria([])
+    const v = e.target.value
+    setMateria(v)
+    setSuggerimentiMateria(v.length > 0 ? materie.filter(m => m.toLowerCase().includes(v.toLowerCase())).slice(0, 6) : [])
   }
 
   function updateUniversita(e: React.ChangeEvent<HTMLInputElement>) {
-    const valore = e.target.value
-    setUniversitaSelezionata(valore)
-    if (valore.length > 0) {
-      const filtrati = universita.filter(function (u) {
-        return u.toLowerCase().includes(valore.toLowerCase())
-      })
-      setSuggerimentiUniversita(filtrati.slice(0, 6))
-    } else {
-      setSuggerimentiUniversita([])
-    }
-  }
-
-  function selezionaUniversita(valore: string) {
-    setUniversitaSelezionata(valore)
-    setSuggerimentiUniversita([])
+    const v = e.target.value
+    setUniversitaSelezionata(v)
+    setSuggerimentiUniversita(v.length > 0 ? universita.filter(u => u.toLowerCase().includes(v.toLowerCase())).slice(0, 6) : [])
   }
 
   const handleUpload = async () => {
-    if (!file) {
-      setError('Seleziona un file PDF')
-      return
-    }
+    if (!file) { setError('Seleziona un file PDF'); return }
     setLoading(true)
     setError('')
-
     const { data: userData } = await supabase.auth.getUser()
-    if (!userData.user) {
-      setError('Devi accedere prima di caricare appunti')
-      setLoading(false)
-      return
-    }
+    if (!userData.user) { setError('Devi accedere prima'); setLoading(false); return }
 
     const fileName = `${Date.now()}_${file.name}`
-    const { error: uploadError } = await supabase.storage
-      .from('appunti')
-      .upload(fileName, file)
+    const { error: uploadError } = await supabase.storage.from('appunti').upload(fileName, file)
+    if (uploadError) { setError('Errore nel caricamento: ' + uploadError.message); setLoading(false); return }
 
-    if (uploadError) {
-      setError('Errore nel caricamento del file: ' + uploadError.message)
-      setLoading(false)
-      return
-    }
-
-    const { data: urlData } = supabase.storage
-      .from('appunti')
-      .getPublicUrl(fileName)
-
+    const { data: urlData } = supabase.storage.from('appunti').getPublicUrl(fileName)
     const { error: dbError } = await supabase.from('notes').insert({
-      titolo,
-      descrizione,
-      materia,
+      titolo, descrizione, materia,
       universita: universitaSelezionata,
       prezzo: parseFloat(prezzo) || 0,
       file_url: urlData.publicUrl,
       autore_id: userData.user.id
     })
 
-    if (dbError) {
-      setError('Errore nel salvataggio: ' + dbError.message)
-    } else {
-      setSuccess(true)
-      setTimeout(() => router.push('/dashboard'), 1500)
-    }
+    if (dbError) { setError('Errore nel salvataggio: ' + dbError.message) }
+    else { setSuccess(true); setTimeout(() => router.push('/dashboard'), 1500) }
     setLoading(false)
   }
 
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' }
+
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
-      <div className="max-w-xl mx-auto px-8 py-10">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Carica i tuoi appunti</h1>
-          <p className="text-gray-500 mb-6">Condividi e guadagna con i tuoi appunti</p>
+    <Layout>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Carica i tuoi appunti</h1>
+        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32 }}>Condividi e guadagna con i tuoi materiali</p>
 
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-          {success && <p className="text-green-500 text-sm mb-4">Appunti caricati con successo!</p>}
+        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
+          {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+          {success && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16 }}>Appunti caricati con successo!</p>}
 
-          <input
-            type="text"
-            placeholder="Titolo"
-            value={titolo}
-            onChange={(e) => setTitolo(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <textarea
-            placeholder="Descrizione"
-            value={descrizione}
-            onChange={(e) => setDescrizione(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-            rows={3}
-          />
+          <input type="text" placeholder="Titolo (es. Analisi Matematica 1 — Limiti)" value={titolo} onChange={e => setTitolo(e.target.value)} style={inputStyle} />
+          <textarea placeholder="Descrizione" value={descrizione} onChange={e => setDescrizione(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
 
-          <div className="relative mb-3">
-            <input
-              type="text"
-              placeholder="Materia"
-              value={materia}
-              onChange={updateMateria}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
-            />
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            <input type="text" placeholder="Materia (es. Analisi Matematica)" value={materia} onChange={updateMateria} style={{ ...inputStyle, marginBottom: 0 }} />
             {suggerimentiMateria.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
-                {suggerimentiMateria.map(function (s, i) {
-                  return (
-                    <button
-                      key={i}
-                      onClick={function () { selezionaMateria(s) }}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
-                    >
-                      {s}
-                    </button>
-                  )
-                })}
+              <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                {suggerimentiMateria.map(s => (
+                  <button key={s} onClick={() => { setMateria(s); setSuggerimentiMateria([]) }} style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>{s}</button>
+                ))}
               </div>
             )}
           </div>
 
-          <div className="relative mb-3">
-            <input
-              type="text"
-              placeholder="Universita"
-              value={universitaSelezionata}
-              onChange={updateUniversita}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
-            />
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            <input type="text" placeholder="Università" value={universitaSelezionata} onChange={updateUniversita} style={{ ...inputStyle, marginBottom: 0 }} />
             {suggerimentiUniversita.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
-                {suggerimentiUniversita.map(function (s, i) {
-                  return (
-                    <button
-                      key={i}
-                      onClick={function () { selezionaUniversita(s) }}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
-                    >
-                      {s}
-                    </button>
-                  )
-                })}
+              <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                {suggerimentiUniversita.map(s => (
+                  <button key={s} onClick={() => { setUniversitaSelezionata(s); setSuggerimentiUniversita([]) }} style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>{s}</button>
+                ))}
               </div>
             )}
           </div>
 
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Prezzo"
-            value={prezzo}
-            onChange={(e) => setPrezzo(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm"
-          />
+          <input type="number" step="0.01" placeholder="Prezzo in euro (0 per gratis)" value={prezzo} onChange={e => setPrezzo(e.target.value)} style={inputStyle} />
+
+          <div style={{ border: '1px dashed #e5e7eb', borderRadius: 10, padding: 20, textAlign: 'center', marginBottom: 20, background: '#f9fafb' }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>📄</div>
+            <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>Trascina il PDF qui oppure clicca per selezionarlo</p>
+            <input type="file" accept=".pdf" onChange={e => setFile(e.target.files?.[0] || null)} style={{ fontSize: 13 }} />
+            {file && <p style={{ fontSize: 12, color: '#059669', marginTop: 8 }}>File selezionato: {file.name}</p>}
+          </div>
+
           <button
             onClick={handleUpload}
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            style={{ width: '100%', background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '13px', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
           >
             {loading ? 'Caricamento in corso...' : 'Pubblica appunti'}
           </button>
         </div>
       </div>
-    </main>
+    </Layout>
   )
 }
