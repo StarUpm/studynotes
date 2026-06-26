@@ -1,88 +1,65 @@
 'use client'
 
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import Layout from '@/app/components/Layout'
 
 export default function Dashboard() {
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <div className="flex gap-4 items-center">
-          <Link href="/esplora" className="text-sm text-gray-500 hover:text-blue-600">Esplora appunti</Link>
-          <Link href="/tutor" className="text-sm text-gray-500 hover:text-blue-600">Trova tutor</Link>
-          <Link href="/profilo-utente" className="text-sm text-gray-500 hover:text-blue-600">Il mio profilo</Link>
-          <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">Esci</button>
+    <Layout>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 32 }}>Benvenuto! 👋</h1>
+
+        {/* STATS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
+          {[
+            { label: 'Appunti caricati', value: '0' },
+            { label: 'Guadagni totali', value: '€ 0' },
+            { label: 'Quiz completati', value: '0' },
+            { label: 'Ripetizioni', value: '0' },
+          ].map(function(s) {
+            return (
+              <div key={s.label} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>{s.label}</p>
+                <p style={{ fontSize: 28, fontWeight: 700, color: '#111827' }}>{s.value}</p>
+              </div>
+            )
+          })}
         </div>
-      </nav>
-      <div className="max-w-6xl mx-auto px-8 py-10">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Benvenuto! 👋</h1>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Appunti caricati</p>
-            <p className="text-3xl font-bold text-gray-900">0</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Guadagni</p>
-            <p className="text-3xl font-bold text-gray-900">€0</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Quiz completati</p>
-            <p className="text-3xl font-bold text-gray-900">0</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Ripetizioni</p>
-            <p className="text-3xl font-bold text-gray-900">0</p>
-          </div>
+
+        {/* AZIONI PRINCIPALI */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+          {[
+            { emoji: '📝', title: 'Carica appunti', desc: 'Vendi i tuoi appunti e guadagna', href: '/upload' },
+            { emoji: '🔍', title: 'Esplora appunti', desc: 'Trova appunti di altri studenti', href: '/esplora' },
+            { emoji: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi dai tuoi appunti', href: '/quiz' },
+          ].map(function(item) {
+            return (
+              <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, textDecoration: 'none', display: 'block', transition: 'border-color 0.2s' }}>
+                <div style={{ fontSize: 28, marginBottom: 12 }}>{item.emoji}</div>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 6 }}>{item.title}</h3>
+                <p style={{ fontSize: 12, color: '#6B7280' }}>{item.desc}</p>
+              </Link>
+            )
+          })}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Link href="/upload" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">📝</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Carica appunti</h3>
-            <p className="text-sm text-gray-500">Vendi i tuoi appunti e guadagna</p>
-          </Link>
-          <Link href="/esplora" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">🔍</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Esplora appunti</h3>
-            <p className="text-sm text-gray-500">Trova appunti di altri studenti</p>
-          </Link>
-          <Link href="/quiz" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">🤖</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Studia con AI</h3>
-            <p className="text-sm text-gray-500">Quiz, flashcard e schemi dai tuoi appunti</p>
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Link href="/tutor" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">🎓</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Trova un tutor</h3>
-            <p className="text-sm text-gray-500">Prenota ripetizioni online</p>
-          </Link>
-          <Link href="/diventa-tutor" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">👨‍🏫</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Diventa tutor</h3>
-            <p className="text-sm text-gray-500">Offri ripetizioni e guadagna</p>
-          </Link>
-          <Link href="/sessioni" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">📅</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Le mie sessioni</h3>
-            <p className="text-sm text-gray-500">Gestisci le tue prenotazioni</p>
-          </Link>
-          <Link href="/profilo-utente" className="bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 cursor-pointer block">
-            <div className="text-3xl mb-4">👤</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Il mio profilo</h3>
-            <p className="text-sm text-gray-500">Saldo, acquisti e dati personali</p>
-          </Link>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {[
+            { emoji: '🎓', title: 'Trova un tutor', desc: 'Prenota ripetizioni online', href: '/tutor' },
+            { emoji: '👨‍🏫', title: 'Diventa tutor', desc: 'Offri ripetizioni e guadagna', href: '/diventa-tutor' },
+            { emoji: '📅', title: 'Le mie sessioni', desc: 'Gestisci le tue prenotazioni', href: '/sessioni' },
+            { emoji: '👤', title: 'Il mio profilo', desc: 'Saldo, acquisti e dati personali', href: '/profilo-utente' },
+          ].map(function(item) {
+            return (
+              <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: 24, textDecoration: 'none', display: 'block' }}>
+                <div style={{ fontSize: 28, marginBottom: 12 }}>{item.emoji}</div>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 6 }}>{item.title}</h3>
+                <p style={{ fontSize: 12, color: '#6B7280' }}>{item.desc}</p>
+              </Link>
+            )
+          })}
         </div>
       </div>
-    </main>
+    </Layout>
   )
 }
