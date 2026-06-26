@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { universita } from '@/lib/dati-universita'
+import Layout from '@/app/components/Layout'
 
 export default function ProfiloUtente() {
   const [tab, setTab] = useState('profilo')
@@ -25,16 +26,11 @@ export default function ProfiloUtente() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  useEffect(() => {
-    caricaDati()
-  }, [])
+  useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
     const userData = await supabase.auth.getUser()
-    if (!userData.data.user) {
-      router.push('/login')
-      return
-    }
+    if (!userData.data.user) { router.push('/login'); return }
     const userId = userData.data.user.id
 
     const [profiloResult, acquistiResult, sessioniSResult, sessioniTResult, notesResult] = await Promise.all([
@@ -59,17 +55,17 @@ export default function ProfiloUtente() {
     if (sessioniTResult.data) setSessioniTutor(sessioniTResult.data)
 
     if (notesResult.data && notesResult.data.length > 0) {
-      const noteIds = notesResult.data.map(function (n) { return n.id })
+      const noteIds = notesResult.data.map(function(n) { return n.id })
       const purchasesResult = await supabase.from('purchases').select('prezzo').in('note_id', noteIds)
       if (purchasesResult.data) {
-        const totale = purchasesResult.data.reduce(function (acc, p) { return acc + (p.prezzo || 0) }, 0)
+        const totale = purchasesResult.data.reduce(function(acc, p) { return acc + (p.prezzo || 0) }, 0)
         setGuadagniAppunti(totale * 0.8)
       }
     }
 
     if (sessioniTResult.data) {
-      const completate = sessioniTResult.data.filter(function (s) { return s.stato === 'completata' })
-      const totale = completate.reduce(function (acc, s) { return acc + (s.prezzo || 0) }, 0)
+      const completate = sessioniTResult.data.filter(function(s) { return s.stato === 'completata' })
+      const totale = completate.reduce(function(acc, s) { return acc + (s.prezzo || 0) }, 0)
       setGuadagniSessioni(totale * 0.8)
     }
 
@@ -77,16 +73,9 @@ export default function ProfiloUtente() {
   }
 
   function updateUniversita(e: React.ChangeEvent<HTMLInputElement>) {
-    const valore = e.target.value
-    setUniversitaInput(valore)
-    if (valore.length > 0) {
-      const filtrati = universita.filter(function (u) {
-        return u.toLowerCase().includes(valore.toLowerCase())
-      })
-      setSuggerimenti(filtrati.slice(0, 6))
-    } else {
-      setSuggerimenti([])
-    }
+    const v = e.target.value
+    setUniversitaInput(v)
+    setSuggerimenti(v.length > 0 ? universita.filter(u => u.toLowerCase().includes(v.toLowerCase())).slice(0, 6) : [])
   }
 
   async function salvaProfilo() {
@@ -95,18 +84,11 @@ export default function ProfiloUtente() {
     const userData = await supabase.auth.getUser()
     if (!userData.data.user) return
     const result = await supabase.from('profiles').update({
-      nome, cognome,
-      universita: universitaInput,
-      tipo_istituto: tipoIstituto,
-      anno_studio: annoStudio,
-      curriculum
+      nome, cognome, universita: universitaInput,
+      tipo_istituto: tipoIstituto, anno_studio: annoStudio, curriculum
     }).eq('id', userData.data.user.id)
-    if (result.error) {
-      setErroreProfilo('Errore nel salvataggio')
-    } else {
-      setSuccessoProfilo(true)
-      setTimeout(() => setSuccessoProfilo(false), 3000)
-    }
+    if (result.error) { setErroreProfilo('Errore nel salvataggio') }
+    else { setSuccessoProfilo(true); setTimeout(() => setSuccessoProfilo(false), 3000) }
     setSalvando(false)
   }
 
@@ -116,74 +98,63 @@ export default function ProfiloUtente() {
   }
 
   function coloreStato(stato: string) {
-    if (stato === 'confermata') return 'bg-green-50 text-green-600'
-    if (stato === 'completata') return 'bg-blue-50 text-blue-600'
-    if (stato === 'rifiutata') return 'bg-red-50 text-red-600'
-    return 'bg-yellow-50 text-yellow-600'
+    if (stato === 'confermata') return { bg: '#ECFDF5', color: '#059669' }
+    if (stato === 'completata') return { bg: '#EFF6FF', color: '#185FA5' }
+    if (stato === 'rifiutata') return { bg: '#FEF2F2', color: '#DC2626' }
+    return { bg: '#FFFBEB', color: '#B45309' }
   }
 
   const sessioniFuture = [...sessioniStudente, ...sessioniTutor]
-    .filter(function (s) { return new Date(s.data_ora) > new Date() && s.stato === 'confermata' })
-    .sort(function (a, b) { return new Date(a.data_ora).getTime() - new Date(b.data_ora).getTime() })
+    .filter(function(s) { return new Date(s.data_ora) > new Date() && s.stato === 'confermata' })
+    .sort(function(a, b) { return new Date(a.data_ora).getTime() - new Date(b.data_ora).getTime() })
 
   const saldoTotale = guadagniAppunti + guadagniSessioni
   const nomeVisibile = nome && cognome ? nome + ' ' + cognome : nome || 'Il mio profilo'
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Caricamento...</p>
-      </main>
-    )
-  }
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' } as React.CSSProperties
+
+  if (loading) return (
+    <Layout>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+        <p style={{ color: '#9CA3AF' }}>Caricamento...</p>
+      </div>
+    </Layout>
+  )
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
+    <Layout>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 32px' }}>
 
-      <div className="max-w-5xl mx-auto px-8 py-10">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'white' }}>
             {nomeVisibile.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{nomeVisibile}</h1>
-            {universitaInput && <p className="text-sm text-gray-500">{universitaInput}</p>}
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{nomeVisibile}</h1>
+            {universitaInput && <p style={{ fontSize: 13, color: '#9CA3AF' }}>{universitaInput}</p>}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Saldo totale guadagnato</p>
-            <p className="text-3xl font-bold text-green-600">€ {saldoTotale.toFixed(2)}</p>
-            <p className="text-xs text-gray-400 mt-1">Al netto della commissione 20%</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Da vendita appunti</p>
-            <p className="text-3xl font-bold text-gray-900">€ {guadagniAppunti.toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500 mb-1">Da sessioni tutor</p>
-            <p className="text-3xl font-bold text-gray-900">€ {guadagniSessioni.toFixed(2)}</p>
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {['profilo', 'acquisti', 'sessioni', 'calendario'].map(function (t) {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
+          {[
+            { label: 'Saldo totale', value: '€ ' + saldoTotale.toFixed(2), color: '#185FA5', sub: 'Al netto del 20%' },
+            { label: 'Da appunti', value: '€ ' + guadagniAppunti.toFixed(2), color: '#111827', sub: '' },
+            { label: 'Da sessioni', value: '€ ' + guadagniSessioni.toFixed(2), color: '#111827', sub: '' },
+          ].map(function(s) {
             return (
-              <button
-                key={t}
-                onClick={function () { setTab(t) }}
-                className={tab === t
-                  ? 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm capitalize'
-                  : 'bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm capitalize hover:bg-gray-50'
-                }
-              >
+              <div key={s.label} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>{s.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div>
+                {s.sub && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.sub}</div>}
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          {['profilo', 'acquisti', 'sessioni', 'calendario'].map(function(t) {
+            return (
+              <button key={t} onClick={function() { setTab(t) }} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', background: tab === t ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tab === t ? 'white' : '#6B7280', boxShadow: tab === t ? 'none' : '0 0 0 0.5px #e5e7eb', textTransform: 'capitalize' }}>
                 {t}
               </button>
             )
@@ -191,151 +162,115 @@ export default function ProfiloUtente() {
         </div>
 
         {tab === 'profilo' && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Modifica profilo</h2>
-            {erroreProfilo && <p className="text-red-500 text-sm mb-4">{erroreProfilo}</p>}
-            {successoProfilo && <p className="text-green-500 text-sm mb-4">Profilo salvato!</p>}
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 24 }}>Modifica profilo</h2>
+            {erroreProfilo && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16 }}>{erroreProfilo}</p>}
+            {successoProfilo && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16 }}>✓ Profilo salvato!</p>}
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <input type="text" placeholder="Nome" value={nome}
-                onChange={function (e) { setNome(e.target.value) }}
-                className="border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
-              <input type="text" placeholder="Cognome" value={cognome}
-                onChange={function (e) { setCognome(e.target.value) }}
-                className="border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+              <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
             </div>
 
-            <div className="flex gap-3 mb-3">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input type="radio" checked={tipoIstituto === 'universita'} onChange={function () { setTipoIstituto('universita') }} />
-                Universita
-              </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input type="radio" checked={tipoIstituto === 'liceo'} onChange={function () { setTipoIstituto('liceo') }} />
-                Scuola superiore
-              </label>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+              {['universita', 'liceo'].map(function(tipo) {
+                return (
+                  <label key={tipo} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+                    <input type="radio" checked={tipoIstituto === tipo} onChange={function() { setTipoIstituto(tipo) }} />
+                    {tipo === 'universita' ? 'Università' : 'Scuola superiore'}
+                  </label>
+                )
+              })}
             </div>
 
-            <div className="relative mb-3">
-              <input type="text"
-                placeholder={tipoIstituto === 'universita' ? 'Universita che frequenti' : 'Nome della scuola'}
-                value={universitaInput} onChange={updateUniversita}
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+            <div style={{ position: 'relative', marginBottom: 12 }}>
+              <input type="text" placeholder={tipoIstituto === 'universita' ? 'Università che frequenti' : 'Nome della scuola'} value={universitaInput} onChange={updateUniversita} style={{ ...inputStyle, marginBottom: 0 }} />
               {suggerimenti.length > 0 && (
-                <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
-                  {suggerimenti.map(function (s, i) {
-                    return (
-                      <button key={i} onClick={function () { setUniversitaInput(s); setSuggerimenti([]) }}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block">
-                        {s}
-                      </button>
-                    )
+                <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                  {suggerimenti.map(function(s) {
+                    return <button key={s} onClick={function() { setUniversitaInput(s); setSuggerimenti([]) }} style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>{s}</button>
                   })}
                 </div>
               )}
             </div>
 
-            <input type="text"
-              placeholder={tipoIstituto === 'universita' ? 'Anno di corso (es. 2 anno - Triennale)' : 'Anno (es. 4 anno)'}
-              value={annoStudio} onChange={function (e) { setAnnoStudio(e.target.value) }}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500" />
+            <input type="text" placeholder="Anno di corso (es. 2° anno Triennale)" value={annoStudio} onChange={e => setAnnoStudio(e.target.value)} style={inputStyle} />
+            <textarea placeholder="Breve curriculum: studi, esperienze, competenze..." value={curriculum} onChange={e => setCurriculum(e.target.value)} rows={5} style={{ ...inputStyle, resize: 'vertical' }} />
 
-            <textarea placeholder="Breve curriculum: studi, esperienze, competenze..."
-              value={curriculum} onChange={function (e) { setCurriculum(e.target.value) }}
-              rows={5} className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500" />
-
-            <button onClick={salvaProfilo} disabled={salvando}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            <button onClick={salvaProfilo} disabled={salvando} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 13, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: salvando ? 0.7 : 1 }}>
               {salvando ? 'Salvataggio...' : 'Salva profilo'}
             </button>
           </div>
         )}
 
         {tab === 'acquisti' && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">I miei acquisti</h3>
-            {acquisti.length === 0 && <p className="text-sm text-gray-500">Non hai ancora acquistato nessun appunto</p>}
-            <div className="space-y-3">
-              {acquisti.map(function (a) {
-                return (
-                  <div key={a.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
-                    <div>
-                      <p className="font-medium text-gray-900">{a.notes?.titolo || 'Appunto'}</p>
-                      <p className="text-sm text-gray-500">{a.notes?.materia} · {formattaData(a.created_at)}</p>
-                    </div>
-                    <span className="font-bold text-gray-900">€ {a.prezzo?.toFixed(2)}</span>
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }}>I miei acquisti</h3>
+            {acquisti.length === 0 && <p style={{ fontSize: 13, color: '#9CA3AF' }}>Nessun acquisto effettuato</p>}
+            {acquisti.map(function(a) {
+              return (
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '0.5px solid #f3f4f6' }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{a.notes?.titolo || 'Appunto'}</p>
+                    <p style={{ fontSize: 12, color: '#9CA3AF' }}>{a.notes?.materia} · {formattaData(a.created_at)}</p>
                   </div>
-                )
-              })}
-            </div>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>€ {a.prezzo?.toFixed(2)}</span>
+                </div>
+              )
+            })}
           </div>
         )}
 
         {tab === 'sessioni' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Sessioni come studente</h3>
-              {sessioniStudente.length === 0 && <p className="text-sm text-gray-500">Nessuna sessione</p>}
-              <div className="space-y-3">
-                {sessioniStudente.map(function (s) {
-                  return (
-                    <div key={s.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
-                      <div>
-                        <p className="font-medium text-gray-900">{s.materia}</p>
-                        <p className="text-sm text-gray-500">{formattaData(s.data_ora)} · € {s.prezzo?.toFixed(2)}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {[
+              { titolo: 'Come studente', lista: sessioniStudente },
+              { titolo: 'Come tutor', lista: sessioniTutor },
+            ].map(function(gruppo) {
+              return (
+                <div key={gruppo.titolo} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }}>Sessioni {gruppo.titolo}</h3>
+                  {gruppo.lista.length === 0 && <p style={{ fontSize: 13, color: '#9CA3AF' }}>Nessuna sessione</p>}
+                  {gruppo.lista.map(function(s) {
+                    const c = coloreStato(s.stato)
+                    return (
+                      <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '0.5px solid #f3f4f6' }}>
+                        <div>
+                          <p style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{s.materia}</p>
+                          <p style={{ fontSize: 12, color: '#9CA3AF' }}>{formattaData(s.data_ora)} · € {s.prezzo?.toFixed(2)}</p>
+                        </div>
+                        <span style={{ fontSize: 11, background: c.bg, color: c.color, padding: '3px 10px', borderRadius: 20 }}>{s.stato}</span>
                       </div>
-                      <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Sessioni come tutor</h3>
-              {sessioniTutor.length === 0 && <p className="text-sm text-gray-500">Nessuna sessione</p>}
-              <div className="space-y-3">
-                {sessioniTutor.map(function (s) {
-                  return (
-                    <div key={s.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
-                      <div>
-                        <p className="font-medium text-gray-900">{s.materia}</p>
-                        <p className="text-sm text-gray-500">{formattaData(s.data_ora)} · € {s.prezzo?.toFixed(2)}</p>
-                      </div>
-                      <span className={'text-xs px-3 py-1 rounded-full ' + coloreStato(s.stato)}>{s.stato}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
           </div>
         )}
 
         {tab === 'calendario' && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-900 mb-6">Sessioni programmate</h3>
-            {sessioniFuture.length === 0 && <p className="text-sm text-gray-500">Nessuna sessione futura programmata</p>}
-            <div className="space-y-4">
-              {sessioniFuture.map(function (s) {
-                const d = new Date(s.data_ora)
-                return (
-                  <div key={s.id} className="flex gap-4 items-start">
-                    <div className="bg-blue-50 rounded-xl p-3 text-center min-w-16">
-                      <p className="text-xs text-blue-600 font-medium">{d.toLocaleDateString('it-IT', { month: 'short' }).toUpperCase()}</p>
-                      <p className="text-2xl font-bold text-blue-600">{d.getDate()}</p>
-                    </div>
-                    <div className="flex-1 bg-gray-50 rounded-xl p-4">
-                      <p className="font-semibold text-gray-900">{s.materia}</p>
-                      <p className="text-sm text-gray-500">
-                        {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · € {s.prezzo?.toFixed(2)}
-                      </p>
-                    </div>
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 20 }}>Sessioni programmate</h3>
+            {sessioniFuture.length === 0 && <p style={{ fontSize: 13, color: '#9CA3AF' }}>Nessuna sessione futura programmata</p>}
+            {sessioniFuture.map(function(s) {
+              const d = new Date(s.data_ora)
+              return (
+                <div key={s.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div style={{ background: '#EFF6FF', borderRadius: 10, padding: '8px 12px', textAlign: 'center', minWidth: 48 }}>
+                    <div style={{ fontSize: 10, color: '#185FA5', fontWeight: 600, textTransform: 'uppercase' }}>{d.toLocaleDateString('it-IT', { month: 'short' }).toUpperCase()}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#185FA5' }}>{d.getDate()}</div>
                   </div>
-                )
-              })}
-            </div>
+                  <div style={{ background: '#f9fafb', borderRadius: 10, padding: 14, flex: 1 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{s.materia}</p>
+                    <p style={{ fontSize: 12, color: '#9CA3AF' }}>{d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · € {s.prezzo?.toFixed(2)}</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
-    </main>
+    </Layout>
   )
 }
