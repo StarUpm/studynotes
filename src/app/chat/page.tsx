@@ -70,7 +70,7 @@ export default function Chat() {
       if (m.destinatario_id !== uid) utentiIds.add(m.destinatario_id)
     })
 
-    if (utentiIds.size === 0) return
+    if (utentiIds.size === 0) { setLoading(false); return }
 
     const profiliResult = await supabase.from('profiles').select('*').in('id', Array.from(utentiIds))
     const profili = profiliResult.data || []
@@ -121,12 +121,24 @@ export default function Chat() {
   async function inviaMessaggio() {
     if (!nuovoMessaggio.trim() || !chatAttiva || invio) return
     setInvio(true)
+    const testo = nuovoMessaggio.trim()
     const result = await supabase.from('messaggi_chat').insert({
       mittente_id: userId,
       destinatario_id: chatAttiva.id,
-      testo: nuovoMessaggio.trim()
+      testo
     })
     if (!result.error) {
+      await fetch('/api/notifica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          utente_id: chatAttiva.id,
+          tipo: 'messaggio',
+          titolo: 'Nuovo messaggio',
+          messaggio: testo.substring(0, 60),
+          link: '/chat'
+        })
+      })
       setNuovoMessaggio('')
       await caricaMessaggi(chatAttiva.id)
       await caricaConversazioni(userId)
@@ -169,7 +181,6 @@ export default function Chat() {
 
         <div style={{ display: 'flex', gap: 16, height: 580 }}>
 
-          {/* SIDEBAR */}
           <div style={{ width: 280, background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
             <div style={{ padding: 14, borderBottom: '0.5px solid #e5e7eb' }}>
               <div style={{ position: 'relative' }}>
@@ -201,7 +212,7 @@ export default function Chat() {
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {loading && <p style={{ fontSize: 13, color: '#9CA3AF', padding: 16 }}>Caricamento...</p>}
               {!loading && conversazioni.length === 0 && (
-                <p style={{ fontSize: 13, color: '#9CA3AF', padding: 16, textAlign: 'center' }}>Nessuna conversazione ancora — cerca un utente per iniziare!</p>
+                <p style={{ fontSize: 13, color: '#9CA3AF', padding: 16, textAlign: 'center' }}>Nessuna conversazione — cerca un utente!</p>
               )}
               {conversazioni.map(function(conv) {
                 const attiva = chatAttiva?.id === conv.utente.id
@@ -224,7 +235,6 @@ export default function Chat() {
             </div>
           </div>
 
-          {/* CHAT PRINCIPALE */}
           {chatAttiva ? (
             <div style={{ flex: 1, background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ padding: '12px 18px', borderBottom: '0.5px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 12 }}>
