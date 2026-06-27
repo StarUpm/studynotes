@@ -155,10 +155,10 @@ export default function ProfiloUtente() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {['profilo', 'acquisti', 'sessioni', 'calendario', 'disponibilità'].map(function(t) {
+          {['profilo', 'acquisti', 'sessioni', 'calendario', 'disponibilita'].map(function(t) {
             return (
               <button key={t} onClick={function() { setTab(t) }} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', background: tab === t ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tab === t ? 'white' : '#6B7280', boxShadow: tab === t ? 'none' : '0 0 0 0.5px #e5e7eb', textTransform: 'capitalize' }}>
-                {t}
+                {t === 'disponibilita' ? 'Disponibilità' : t}
               </button>
             )
           })}
@@ -274,7 +274,7 @@ export default function ProfiloUtente() {
           </div>
         )}
 
-        {tab === 'disponibilità' && (
+        {tab === 'disponibilita' && (
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24, textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 8 }}>Gestisci la tua disponibilità</h3>
