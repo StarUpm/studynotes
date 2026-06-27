@@ -24,7 +24,7 @@ export default function Register() {
       options: { data: { nome } }
     })
     if (error) { setError('Errore durante la registrazione: ' + error.message) }
-    else { setSuccess(true); setTimeout(() => router.push('/dashboard'), 2000) }
+    else { setSuccess(true); setTimeout(() => router.push('/onboarding'), 1500) }
     setLoading(false)
   }
 
@@ -47,7 +47,7 @@ export default function Register() {
             )}
             {success && (
               <div style={{ background: '#ECFDF5', border: '0.5px solid #A7F3D0', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
-                <p style={{ fontSize: 13, color: '#059669' }}>✓ Account creato! Reindirizzamento...</p>
+                <p style={{ fontSize: 13, color: '#059669' }}>✓ Account creato! Benvenuto su Klass 🎉</p>
               </div>
             )}
 
