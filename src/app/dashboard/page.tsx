@@ -49,7 +49,7 @@ export default function Dashboard() {
     <Layout>
       <div style={{ background: '#f9fafb', padding: '32px', maxWidth: 1100, margin: '0 auto' }}>
 
-        {/* HERO BENVENUTO */}
+        {/* HERO */}
         <div style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', borderRadius: 16, padding: '24px 28px', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'white', marginBottom: 4 }}>
@@ -70,11 +70,12 @@ export default function Dashboard() {
             <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Studia</span>
             <span style={{ fontSize: 12, color: '#9CA3AF' }}>Strumenti AI e materiali</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {[
-              { icon: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi dai tuoi appunti', href: '/studia', bg: '#EEEDFE' },
-              { icon: '🔍', title: 'Esplora appunti', desc: 'Trova materiale di altri studenti', href: '/esplora', bg: '#EFF6FF' },
-              { icon: '📝', title: 'Carica appunti', desc: 'Condividi e guadagna dai tuoi materiali', href: '/upload', bg: '#ECFDF5' },
+              { icon: '🤖', title: 'Studia con AI', desc: 'Quiz, flashcard e schemi', href: '/studia', bg: '#EEEDFE' },
+              { icon: '🎙️', title: 'Trascrivi lezioni', desc: 'Audio → testo con AI', href: '/trascrivi', bg: '#FDF2F8' },
+              { icon: '🔍', title: 'Esplora appunti', desc: 'Trova materiale', href: '/esplora', bg: '#EFF6FF' },
+              { icon: '📝', title: 'Carica appunti', desc: 'Condividi +50pt', href: '/upload', bg: '#ECFDF5' },
             ].map(function(item) {
               return (
                 <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
@@ -97,7 +98,7 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
             {[
               { icon: '💬', title: 'Messaggi', desc: 'Chatta con studenti e tutor', href: '/chat', bg: '#FDF2F8' },
-              { icon: '🙋', title: 'Forum Q&A', desc: 'Fai domande e aiuta altri studenti', href: '/forum', bg: '#FFFBEB' },
+              { icon: '🙋', title: 'Forum Q&A', desc: 'Fai domande e aiuta', href: '/forum', bg: '#FFFBEB' },
               { icon: '🏆', title: 'I miei punti', desc: 'Livello ' + livello + ' · ' + punti + ' pt', href: '/punti', bg: '#ECFDF5' },
             ].map(function(item) {
               return (
@@ -184,8 +185,8 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {[
               { icon: '📤', title: 'Carica PDF', desc: 'Nuovo appunto +50pt', href: '/upload', bg: '#EFF6FF' },
-              { icon: '⚡', title: 'Genera quiz', desc: "Con l'AI +20pt", href: '/studia/quiz', bg: '#EEEDFE' },
-              { icon: '🙋', title: 'Fai una domanda', desc: 'Forum Q&A', href: '/forum', bg: '#FFFBEB' },
+              { icon: '🎙️', title: 'Trascrivi', desc: 'Audio → appunti', href: '/trascrivi', bg: '#FDF2F8' },
+              { icon: '🙋', title: 'Forum Q&A', desc: 'Fai una domanda', href: '/forum', bg: '#FFFBEB' },
               { icon: '👤', title: 'Il mio profilo', desc: 'Modifica dati', href: '/profilo-utente', bg: '#F0FDFA' },
             ].map(function(item) {
               return (
