@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import Layout from '@/app/components/Layout'
 
 type Domanda = {
@@ -29,7 +30,7 @@ export default function QuizSessione() {
       router.push('/studia/quiz')
     }
     setLoading(false)
-  }, [])
+  }, [router])
 
   if (loading) return (
     <Layout>
@@ -54,10 +55,18 @@ export default function QuizSessione() {
     setRisposte(nuove)
   }
 
-  function prossima() {
+  async function prossima() {
     if (indice < quiz.length - 1) {
       setIndice(indice + 1)
     } else {
+      const userData = await supabase.auth.getUser()
+      if (userData.data.user) {
+        await fetch('/api/punti', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ utente_id: userData.data.user.id, azione: 'quiz_completato' })
+        })
+      }
       setMostrandoRisultato(true)
     }
   }
@@ -85,8 +94,8 @@ export default function QuizSessione() {
   function messaggio() {
     if (punteggio >= 90) return 'Eccellente! Conosci benissimo questo argomento.'
     if (punteggio >= 70) return 'Ottimo risultato! Hai risposto bene alla maggior parte delle domande.'
-    if (punteggio >= 50) return 'Buon lavoro! Ripassа gli argomenti sbagliati per migliorare.'
-    return 'Continua a studiare — ripassа gli argomenti e riprova!'
+    if (punteggio >= 50) return 'Buon lavoro! Ripassa gli argomenti sbagliati per migliorare.'
+    return 'Continua a studiare — ripassa gli argomenti e riprova!'
   }
 
   if (mostrandoRisultato) {
@@ -96,7 +105,10 @@ export default function QuizSessione() {
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32, textAlign: 'center', marginBottom: 20 }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>{emoji()}</div>
             <div style={{ fontSize: 56, fontWeight: 700, color: '#185FA5', marginBottom: 4 }}>{punteggio}%</div>
-            <p style={{ fontSize: 15, color: '#6B7280', marginBottom: 28 }}>{messaggio()}</p>
+            <p style={{ fontSize: 15, color: '#6B7280', marginBottom: 12 }}>{messaggio()}</p>
+            <div style={{ background: '#ECFDF5', border: '0.5px solid #A7F3D0', borderRadius: 10, padding: '10px 16px', marginBottom: 24, display: 'inline-block' }}>
+              <p style={{ fontSize: 13, color: '#059669' }}>🏆 Hai guadagnato <strong>20 punti</strong> per aver completato il quiz!</p>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
               {[
                 { num: corrette, label: '✅ Corrette', color: '#059669' },
@@ -115,6 +127,9 @@ export default function QuizSessione() {
                   🔁 Riprova gli errori ({errate})
                 </button>
               )}
+              <button onClick={() => router.push('/punti')} style={{ background: '#ECFDF5', color: '#059669', border: '0.5px solid #A7F3D0', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                🏆 Vedi i miei punti
+              </button>
               <button onClick={() => router.push('/studia/quiz')} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 Nuovo quiz
               </button>
@@ -174,13 +189,8 @@ export default function QuizSessione() {
               const corretta = domanda.risposta_corretta === i
               let bg = 'white', border = '0.5px solid #e5e7eb', color = '#374151'
               let letterBg = '#f3f4f6', letterColor = '#6B7280'
-              if (haRisposto && corretta) {
-                bg = '#ECFDF5'; border = '1px solid #059669'; color = '#065F46'
-                letterBg = '#059669'; letterColor = 'white'
-              } else if (haRisposto && selezionata && !corretta) {
-                bg = '#FEF2F2'; border = '1px solid #DC2626'; color = '#991B1B'
-                letterBg = '#DC2626'; letterColor = 'white'
-              }
+              if (haRisposto && corretta) { bg = '#ECFDF5'; border = '1px solid #059669'; color = '#065F46'; letterBg = '#059669'; letterColor = 'white' }
+              else if (haRisposto && selezionata && !corretta) { bg = '#FEF2F2'; border = '1px solid #DC2626'; color = '#991B1B'; letterBg = '#DC2626'; letterColor = 'white' }
               return (
                 <button key={i} onClick={() => rispondi(i)} style={{ width: '100%', textAlign: 'left', border, borderRadius: 10, padding: '13px 16px', fontSize: 14, cursor: haRisposto ? 'default' : 'pointer', background: bg, color, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 6, background: letterBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: letterColor, flexShrink: 0 }}>
