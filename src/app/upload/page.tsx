@@ -52,22 +52,42 @@ export default function Upload() {
       autore_id: userData.user.id
     })
 
-    if (dbError) { setError('Errore nel salvataggio: ' + dbError.message) }
-    else { setSuccess(true); setTimeout(() => router.push('/dashboard'), 1500) }
+    if (dbError) {
+      setError('Errore nel salvataggio: ' + dbError.message)
+    } else {
+      await fetch('/api/punti', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ utente_id: userData.user.id, azione: 'appunto_caricato' })
+      })
+      await fetch('/api/notifica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          utente_id: userData.user.id,
+          tipo: 'acquisto',
+          titolo: 'Appunto pubblicato!',
+          messaggio: 'Il tuo appunto "' + titolo + '" è ora disponibile su Klass. Hai guadagnato 50 punti!',
+          link: '/esplora'
+        })
+      })
+      setSuccess(true)
+      setTimeout(() => router.push('/dashboard'), 1500)
+    }
     setLoading(false)
   }
 
-  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' }
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' } as React.CSSProperties
 
   return (
     <Layout>
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 32px' }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Carica i tuoi appunti</h1>
-        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32 }}>Condividi e guadagna con i tuoi materiali</p>
+        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32 }}>Condividi e guadagna con i tuoi materiali · <span style={{ color: '#059669', fontWeight: 600 }}>+50 punti</span></p>
 
         <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
-          {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-          {success && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16 }}>Appunti caricati con successo!</p>}
+          {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16, background: '#FEF2F2', padding: '10px 14px', borderRadius: 8 }}>{error}</p>}
+          {success && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16, background: '#ECFDF5', padding: '10px 14px', borderRadius: 8 }}>✓ Appunti caricati! Hai guadagnato 50 punti 🎉</p>}
 
           <input type="text" placeholder="Titolo (es. Analisi Matematica 1 — Limiti)" value={titolo} onChange={e => setTitolo(e.target.value)} style={inputStyle} />
           <textarea placeholder="Descrizione" value={descrizione} onChange={e => setDescrizione(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
@@ -100,15 +120,16 @@ export default function Upload() {
             <div style={{ fontSize: 24, marginBottom: 8 }}>📄</div>
             <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>Trascina il PDF qui oppure clicca per selezionarlo</p>
             <input type="file" accept=".pdf" onChange={e => setFile(e.target.files?.[0] || null)} style={{ fontSize: 13 }} />
-            {file && <p style={{ fontSize: 12, color: '#059669', marginTop: 8 }}>File selezionato: {file.name}</p>}
+            {file && <p style={{ fontSize: 12, color: '#059669', marginTop: 8 }}>✓ File selezionato: {file.name}</p>}
           </div>
 
-          <button
-            onClick={handleUpload}
-            disabled={loading}
-            style={{ width: '100%', background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '13px', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
-          >
-            {loading ? 'Caricamento in corso...' : 'Pubblica appunti'}
+          <div style={{ background: '#ECFDF5', border: '0.5px solid #A7F3D0', borderRadius: 10, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 16 }}>🏆</span>
+            <p style={{ fontSize: 12, color: '#059669' }}>Guadagnerai <strong>50 punti</strong> caricando questi appunti!</p>
+          </div>
+
+          <button onClick={handleUpload} disabled={loading} style={{ width: '100%', background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '13px', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+            {loading ? 'Caricamento in corso...' : 'Pubblica appunti (+50 punti)'}
           </button>
         </div>
       </div>
