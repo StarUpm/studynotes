@@ -27,10 +27,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     async function init() {
       const userData = await supabase.auth.getUser()
       if (!userData.data.user) return
-      setUserId(userData.data.user.id)
-      await caricaNotifiche(userData.data.user.id)
-
       const uid = userData.data.user.id
+      setUserId(uid)
+      await caricaNotifiche(uid)
+
       const channel = supabase
         .channel('notifiche_' + uid)
         .on('postgres_changes', {
@@ -42,8 +42,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           caricaNotifiche(uid)
         })
         .subscribe()
-
-      return function() { supabase.removeChannel(channel) }
 
       return function() { supabase.removeChannel(channel) }
     }
@@ -62,12 +60,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   async function segnaLetta(id: string) {
     await supabase.from('notifiche').update({ letta: true }).eq('id', id)
-    setNotifiche(prev => prev.map(n => n.id === id ? { ...n, letta: true } : n))
+    setNotifiche(function(prev) { return prev.map(function(n) { return n.id === id ? { ...n, letta: true } : n }) })
   }
 
   async function segnaAllLette() {
     await supabase.from('notifiche').update({ letta: true }).eq('utente_id', userId).eq('letta', false)
-    setNotifiche(prev => prev.map(n => ({ ...n, letta: true })))
+    setNotifiche(function(prev) { return prev.map(function(n) { return { ...n, letta: true } }) })
   }
 
   function handleLogout() {
@@ -95,7 +93,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return Math.floor(ore / 24) + ' giorni fa'
   }
 
-  const nonLette = notifiche.filter(n => !n.letta).length
+  const nonLette = notifiche.filter(function(n) { return !n.letta }).length
 
   return (
     <div style={{ fontFamily: 'var(--font-sans, system-ui)', background: '#f9fafb', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -139,7 +137,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {notificheOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setNotificheOpen(false)}>
-          <div style={{ position: 'absolute', top: 64, right: 80, width: 360, background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+          <div style={{ position: 'absolute', top: 64, right: 80, width: 360, background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }} onClick={function(e) { e.stopPropagation() }}>
             <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Notifiche</p>
               {nonLette > 0 && (
@@ -188,7 +186,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link href="/tutor" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Tutor</Link>
           <Link href="/studia" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Studia con AI</Link>
           <Link href="/chat" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>💬 Chat</Link>
-
           <button
             onClick={() => setNotificheOpen(!notificheOpen)}
             style={{ position: 'relative', background: 'none', border: '0.5px solid #d1d5db', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
@@ -200,7 +197,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
             )}
           </button>
-
           <Link href="/profilo-utente" style={{ background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Il mio profilo</Link>
           <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: '0.5px solid #d1d5db', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <span style={{ display: 'block', width: 16, height: 1.5, background: '#374151', borderRadius: 2 }} />
