@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string
 )
 
 const PUNTI_PER_AZIONE: Record<string, number> = {
@@ -44,10 +44,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Azione non riconosciuta' }, { status: 400 })
     }
 
-    const existing = await supabase.from('punti_utente').select('*').eq('utente_id', utente_id).single()
+    const existing = await supabaseAdmin
+      .from('punti_utente')
+      .select('*')
+      .eq('utente_id', utente_id)
+      .single()
 
     if (existing.error || !existing.data) {
-      await supabase.from('punti_utente').insert({
+      await supabaseAdmin.from('punti_utente').insert({
         utente_id,
         punti_totali: puntiDaAggiungere,
         livello: calcolaLivello(puntiDaAggiungere),
@@ -58,7 +62,7 @@ export async function POST(request: NextRequest) {
       })
     } else {
       const nuoviPunti = existing.data.punti_totali + puntiDaAggiungere
-      await supabase.from('punti_utente').update({
+      await supabaseAdmin.from('punti_utente').update({
         punti_totali: nuoviPunti,
         livello: calcolaLivello(nuoviPunti),
         appunti_caricati: existing.data.appunti_caricati + (azione === 'appunto_caricato' ? 1 : 0),
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
       }).eq('utente_id', utente_id)
     }
 
-    await supabase.from('storico_punti').insert({
+    await supabaseAdmin.from('storico_punti').insert({
       utente_id,
       punti: puntiDaAggiungere,
       motivo: azione
@@ -90,7 +94,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'utente_id mancante' }, { status: 400 })
     }
 
-    const result = await supabase.from('punti_utente').select('*').eq('utente_id', utente_id).single()
+    const result = await supabaseAdmin
+      .from('punti_utente')
+      .select('*')
+      .eq('utente_id', utente_id)
+      .single()
 
     if (result.error || !result.data) {
       return NextResponse.json({
