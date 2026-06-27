@@ -15,6 +15,7 @@ export default function ProfiloUtente() {
   const [annoStudio, setAnnoStudio] = useState('')
   const [curriculum, setCurriculum] = useState('')
   const [isTutor, setIsTutor] = useState(false)
+  const [premiumAttivo, setPremiumAttivo] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [successoProfilo, setSuccessoProfilo] = useState(false)
   const [erroreProfilo, setErroreProfilo] = useState('')
@@ -51,6 +52,7 @@ export default function ProfiloUtente() {
       setAnnoStudio(p.anno_studio || '')
       setCurriculum(p.curriculum || '')
       setIsTutor(p.is_tutor || false)
+      setPremiumAttivo(p.premium_attivo || false)
     }
     if (acquistiResult.data) setAcquisti(acquistiResult.data)
     if (sessioniSResult.data) setSessioniStudente(sessioniSResult.data)
@@ -132,9 +134,12 @@ export default function ProfiloUtente() {
             {nomeVisibile.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{nomeVisibile}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{nomeVisibile}</h1>
+              {premiumAttivo && <span style={{ fontSize: 11, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', padding: '2px 10px', borderRadius: 20 }}>👑 Premium</span>}
+              {isTutor && <span style={{ fontSize: 11, background: '#ECFDF5', color: '#059669', padding: '2px 10px', borderRadius: 20 }}>Tutor</span>}
+            </div>
             {universitaInput && <p style={{ fontSize: 13, color: '#9CA3AF' }}>{universitaInput}</p>}
-            {isTutor && <span style={{ fontSize: 11, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', padding: '2px 10px', borderRadius: 20, marginTop: 4, display: 'inline-block' }}>Tutor</span>}
           </div>
         </div>
 
@@ -155,10 +160,11 @@ export default function ProfiloUtente() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {['profilo', 'acquisti', 'sessioni', 'calendario', 'disponibilita'].map(function(t) {
+          {['profilo', 'acquisti', 'sessioni', 'calendario', 'disponibilita', 'accessibilita'].map(function(t) {
+            const label = t === 'disponibilita' ? 'Disponibilità' : t === 'accessibilita' ? '⚙️ Studio' : t
             return (
               <button key={t} onClick={function() { setTab(t) }} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', background: tab === t ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tab === t ? 'white' : '#6B7280', boxShadow: tab === t ? 'none' : '0 0 0 0.5px #e5e7eb', textTransform: 'capitalize' }}>
-                {t === 'disponibilita' ? 'Disponibilità' : t}
+                {label}
               </button>
             )
           })}
@@ -279,25 +285,28 @@ export default function ProfiloUtente() {
             <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 8 }}>Gestisci la tua disponibilità</h3>
             <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
-              {isTutor
-                ? 'Imposta gli orari in cui sei disponibile per le ripetizioni — gli studenti potranno scegliere direttamente i tuoi slot'
-                : 'Devi prima attivare il profilo tutor per gestire la disponibilità'}
+              {isTutor ? 'Imposta gli orari in cui sei disponibile per le ripetizioni' : 'Devi prima attivare il profilo tutor per gestire la disponibilità'}
             </p>
             {isTutor ? (
-              <button
-                onClick={function() { router.push('/disponibilita') }}
-                style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-              >
+              <button onClick={function() { router.push('/disponibilita') }} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 Gestisci disponibilità →
               </button>
             ) : (
-              <button
-                onClick={function() { router.push('/diventa-tutor') }}
-                style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-              >
+              <button onClick={function() { router.push('/diventa-tutor') }} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 Attiva profilo tutor →
               </button>
             )}
+          </div>
+        )}
+
+        {tab === 'accessibilita' && (
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⚙️</div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 8 }}>Modalità di studio personalizzata</h3>
+            <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>Personalizza font, colori, concentrazione e audio in base alle tue esigenze di studio</p>
+            <button onClick={function() { router.push('/accessibilita') }} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              Personalizza esperienza →
+            </button>
           </div>
         )}
 
