@@ -108,6 +108,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ['Esplora appunti', '/esplora'],
                 ['Trova un tutor', '/tutor'],
                 ['Studia con AI', '/studia'],
+                ['Trascrivi lezioni', '/trascrivi'],
                 ['Messaggi', '/chat'],
                 ['Forum Q&A', '/forum'],
                 ['I miei punti', '/punti'],
@@ -116,7 +117,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ['Il mio profilo', '/profilo-utente'],
               ].map(function([label, href]) {
                 return (
-                  <Link key={label} href={href} onClick={() => setMenuOpen(false)} style={{ color: 'white', fontSize: 20, fontWeight: 500, textDecoration: 'none', padding: '10px 0', borderBottom: '0.5px solid rgba(255,255,255,0.1)', display: 'block' }}>
+                  <Link key={label} href={href} onClick={() => setMenuOpen(false)} style={{ color: 'white', fontSize: 18, fontWeight: 500, textDecoration: 'none', padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.1)', display: 'block' }}>
                     {label}
                   </Link>
                 )
@@ -183,10 +184,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', borderBottom: '0.5px solid #e5e7eb', background: 'white', position: 'sticky', top: 0, zIndex: 50 }}>
         <Link href="/dashboard" style={{ fontSize: 22, fontWeight: 700, background: 'linear-gradient(135deg, #185FA5, #7F77DD)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textDecoration: 'none', letterSpacing: -0.5 }}>Klass</Link>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
           <Link href="/esplora" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Esplora</Link>
           <Link href="/tutor" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Tutor</Link>
           <Link href="/studia" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Studia con AI</Link>
+          <Link href="/trascrivi" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🎙️ Trascrivi</Link>
           <Link href="/chat" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>💬 Chat</Link>
           <Link href="/forum" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🙋 Forum</Link>
           <Link href="/punti" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🏆 Punti</Link>
@@ -201,7 +203,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
             )}
           </button>
-          <Link href="/profilo-utente" style={{ background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Il mio profilo</Link>
+          <Link href="/profilo-utente" style={{ background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Profilo</Link>
           <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: '0.5px solid #d1d5db', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <span style={{ display: 'block', width: 16, height: 1.5, background: '#374151', borderRadius: 2 }} />
             <span style={{ display: 'block', width: 16, height: 1.5, background: '#374151', borderRadius: 2 }} />
@@ -215,7 +217,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer style={{ background: '#042C53', padding: '48px 40px 0', marginTop: 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1.6fr', gap: 32, paddingBottom: 40, borderBottom: '0.5px solid rgba(255,255,255,0.12)' }}>
           {[
-            { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Forum Q&A', '/forum'], ['Carica appunti', '/upload']] },
+            { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Trascrivi lezioni', '/trascrivi'], ['Forum Q&A', '/forum']] },
             { title: 'Account', links: [['Registrati', '/register'], ['Accedi', '/login'], ['Il mio profilo', '/profilo-utente'], ['Le mie sessioni', '/sessioni'], ['I miei punti', '/punti']] },
             { title: 'Social', links: [['Instagram', '#'], ['TikTok', '#'], ['YouTube', '#'], ['LinkedIn', '#']] },
             { title: 'Link utili', links: [['Privacy Policy', '#'], ['Termini e condizioni', '#'], ['Cookie Policy', '#'], ['FAQ', '#'], ['Contattaci', '#']] },
