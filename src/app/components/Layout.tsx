@@ -21,6 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [notifiche, setNotifiche] = useState<Notifica[]>([])
   const [notificheOpen, setNotificheOpen] = useState(false)
   const [userId, setUserId] = useState('')
+  const [premiumAttivo, setPremiumAttivo] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -30,6 +31,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       const uid = userData.data.user.id
       setUserId(uid)
       await caricaNotifiche(uid)
+
+      const profilo = await supabase.from('profiles').select('premium_attivo').eq('id', uid).single()
+      if (profilo.data?.premium_attivo) setPremiumAttivo(true)
 
       const channel = supabase
         .channel('notifiche_' + uid)
@@ -113,12 +117,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ['Messaggi', '/chat'],
                 ['Forum Q&A', '/forum'],
                 ['I miei punti', '/punti'],
+                ['👑 Klass Premium', '/premium'],
                 ['Diventa tutor', '/diventa-tutor'],
                 ['Le mie sessioni', '/sessioni'],
                 ['Il mio profilo', '/profilo-utente'],
               ].map(function([label, href]) {
                 return (
-                  <Link key={label} href={href} onClick={() => setMenuOpen(false)} style={{ color: 'white', fontSize: 16, fontWeight: 500, textDecoration: 'none', padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.1)', display: 'block' }}>
+                  <Link key={label} href={href} onClick={() => setMenuOpen(false)} style={{ color: label.includes('👑') ? '#FFD700' : 'white', fontSize: 16, fontWeight: 500, textDecoration: 'none', padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.1)', display: 'block' }}>
                     {label}
                   </Link>
                 )
@@ -194,6 +199,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link href="/chat" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>💬</Link>
           <Link href="/forum" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🙋</Link>
           <Link href="/punti" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🏆</Link>
+          {premiumAttivo ? (
+            <Link href="/premium" style={{ fontSize: 13, color: '#B45309', textDecoration: 'none', fontWeight: 600 }}>👑 Premium</Link>
+          ) : (
+            <Link href="/premium" style={{ fontSize: 12, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', padding: '6px 12px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>👑 Premium</Link>
+          )}
           <button
             onClick={() => setNotificheOpen(!notificheOpen)}
             style={{ position: 'relative', background: 'none', border: '0.5px solid #d1d5db', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
@@ -221,7 +231,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {[
             { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Importa contenuti', '/importa'], ['Forum Q&A', '/forum']] },
             { title: 'Account', links: [['Registrati', '/register'], ['Accedi', '/login'], ['Il mio profilo', '/profilo-utente'], ['Le mie sessioni', '/sessioni'], ['I miei punti', '/punti']] },
-            { title: 'Social', links: [['Instagram', '#'], ['TikTok', '#'], ['YouTube', '#'], ['LinkedIn', '#']] },
+            { title: 'Premium', links: [['👑 Klass Premium', '/premium'], ['Piano Mensile', '/premium'], ['Piano Trimestrale', '/premium'], ['Piano Annuale', '/premium']] },
             { title: 'Link utili', links: [['Privacy Policy', '#'], ['Termini e condizioni', '#'], ['Cookie Policy', '#'], ['FAQ', '#'], ['Contattaci', '#']] },
           ].map(function(col) {
             return (
