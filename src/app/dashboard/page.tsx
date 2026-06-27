@@ -88,18 +88,41 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* RIPETIZIONI E CHAT */}
+        {/* COMMUNITY */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Ripetizioni e comunicazione</span>
-            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Tutor, sessioni e chat</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Community</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Connettiti con altri studenti</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+            {[
+              { icon: '💬', title: 'Messaggi', desc: 'Chatta con studenti e tutor', href: '/chat', bg: '#FDF2F8' },
+              { icon: '🙋', title: 'Forum Q&A', desc: 'Fai domande e aiuta altri studenti', href: '/forum', bg: '#FFFBEB' },
+              { icon: '🏆', title: 'I miei punti', desc: 'Livello ' + livello + ' · ' + punti + ' pt', href: '/punti', bg: '#ECFDF5' },
+            ].map(function(item) {
+              return (
+                <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 12 }}>{item.icon}</div>
+                  <span style={{ float: 'right', color: '#d1d5db', fontSize: 16, marginTop: -40 }}>›</span>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{item.title}</h3>
+                  <p style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>{item.desc}</p>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* RIPETIZIONI */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Ripetizioni</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Tutor e sessioni</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
             {[
               { icon: '🎓', title: 'Trova un tutor', desc: 'Prenota ripetizioni online', href: '/tutor', bg: '#FFFBEB' },
               { icon: '👨‍🏫', title: 'Diventa tutor', desc: 'Offri ripetizioni e guadagna', href: '/diventa-tutor', bg: '#F0FDFA' },
               { icon: '📅', title: 'Le mie sessioni', desc: 'Gestisci prenotazioni', href: '/sessioni', bg: '#EEF2FF' },
-              { icon: '💬', title: 'Messaggi', desc: 'Chatta con studenti e tutor', href: '/chat', bg: '#FDF2F8' },
             ].map(function(item) {
               return (
                 <Link key={item.title} href={item.href} style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
@@ -161,8 +184,8 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
             {[
               { icon: '📤', title: 'Carica PDF', desc: 'Nuovo appunto +50pt', href: '/upload', bg: '#EFF6FF' },
-              { icon: '⚡', title: 'Genera quiz', desc: 'Con l\'AI +20pt', href: '/studia/quiz', bg: '#EEEDFE' },
-              { icon: '🏆', title: 'I miei punti', desc: 'Livello ' + livello + ' · ' + punti + ' pt', href: '/punti', bg: '#FFFBEB' },
+              { icon: '⚡', title: 'Genera quiz', desc: "Con l'AI +20pt", href: '/studia/quiz', bg: '#EEEDFE' },
+              { icon: '🙋', title: 'Fai una domanda', desc: 'Forum Q&A', href: '/forum', bg: '#FFFBEB' },
               { icon: '👤', title: 'Il mio profilo', desc: 'Modifica dati', href: '/profilo-utente', bg: '#F0FDFA' },
             ].map(function(item) {
               return (
