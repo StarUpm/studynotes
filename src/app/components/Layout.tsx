@@ -109,6 +109,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ['Trova un tutor', '/tutor'],
                 ['Studia con AI', '/studia'],
                 ['Messaggi', '/chat'],
+                ['Forum Q&A', '/forum'],
                 ['I miei punti', '/punti'],
                 ['Diventa tutor', '/diventa-tutor'],
                 ['Le mie sessioni', '/sessioni'],
@@ -187,6 +188,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link href="/tutor" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Tutor</Link>
           <Link href="/studia" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Studia con AI</Link>
           <Link href="/chat" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>💬 Chat</Link>
+          <Link href="/forum" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🙋 Forum</Link>
           <Link href="/punti" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🏆 Punti</Link>
           <button
             onClick={() => setNotificheOpen(!notificheOpen)}
@@ -213,7 +215,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer style={{ background: '#042C53', padding: '48px 40px 0', marginTop: 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1.6fr', gap: 32, paddingBottom: 40, borderBottom: '0.5px solid rgba(255,255,255,0.12)' }}>
           {[
-            { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Messaggi', '/chat'], ['Carica appunti', '/upload']] },
+            { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Forum Q&A', '/forum'], ['Carica appunti', '/upload']] },
             { title: 'Account', links: [['Registrati', '/register'], ['Accedi', '/login'], ['Il mio profilo', '/profilo-utente'], ['Le mie sessioni', '/sessioni'], ['I miei punti', '/punti']] },
             { title: 'Social', links: [['Instagram', '#'], ['TikTok', '#'], ['YouTube', '#'], ['LinkedIn', '#']] },
             { title: 'Link utili', links: [['Privacy Policy', '#'], ['Termini e condizioni', '#'], ['Cookie Policy', '#'], ['FAQ', '#'], ['Contattaci', '#']] },
