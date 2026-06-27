@@ -30,17 +30,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       setUserId(userData.data.user.id)
       await caricaNotifiche(userData.data.user.id)
 
+      const uid = userData.data.user.id
       const channel = supabase
-        .channel('notifiche_' + userData.data.user.id)
+        .channel('notifiche_' + uid)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'notifiche',
-          filter: 'utente_id=eq.' + userData.data.user.id
+          filter: 'utente_id=eq.' + uid
         }, function() {
-          caricaNotifiche(userData.data.user.id)
+          caricaNotifiche(uid)
         })
         .subscribe()
+
+      return function() { supabase.removeChannel(channel) }
 
       return function() { supabase.removeChannel(channel) }
     }
