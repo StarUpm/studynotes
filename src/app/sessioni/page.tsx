@@ -27,20 +27,43 @@ export default function Sessioni() {
   async function fetchSessioni() {
     const userData = await supabase.auth.getUser()
     if (!userData.data.user) { setLoading(false); return }
-    const comeStudente = await supabase.from('tutoring_sessions').select('*').eq('studente_id', userData.data.user.id).order('data_ora', { ascending: true })
-    const comeTutor = await supabase.from('tutoring_sessions').select('*').eq('tutor_id', userData.data.user.id).order('data_ora', { ascending: true })
+    const uid = userData.data.user.id
+    const comeStudente = await supabase.from('tutoring_sessions').select('*').eq('studente_id', uid).order('data_ora', { ascending: true })
+    const comeTutor = await supabase.from('tutoring_sessions').select('*').eq('tutor_id', uid).order('data_ora', { ascending: true })
     if (comeStudente.data) setSessioniComeStudente(comeStudente.data)
     if (comeTutor.data) setSessioniComeTutor(comeTutor.data)
     setLoading(false)
   }
 
-  async function confermaSessione(id: string) {
-    await supabase.from('tutoring_sessions').update({ stato: 'confermata' }).eq('id', id)
+  async function confermaSessione(sessione: Sessione) {
+    await supabase.from('tutoring_sessions').update({ stato: 'confermata' }).eq('id', sessione.id)
+    await fetch('/api/notifica', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        utente_id: sessione.studente_id,
+        tipo: 'sessione',
+        titolo: 'Sessione confermata!',
+        messaggio: 'La tua sessione di ' + sessione.materia + ' è stata confermata dal tutor.',
+        link: '/sessioni'
+      })
+    })
     fetchSessioni()
   }
 
-  async function rifiutaSessione(id: string) {
-    await supabase.from('tutoring_sessions').update({ stato: 'rifiutata' }).eq('id', id)
+  async function rifiutaSessione(sessione: Sessione) {
+    await supabase.from('tutoring_sessions').update({ stato: 'rifiutata' }).eq('id', sessione.id)
+    await fetch('/api/notifica', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        utente_id: sessione.studente_id,
+        tipo: 'sessione',
+        titolo: 'Sessione rifiutata',
+        messaggio: 'La tua sessione di ' + sessione.materia + ' non è stata accettata dal tutor.',
+        link: '/tutor'
+      })
+    })
     fetchSessioni()
   }
 
@@ -115,10 +138,10 @@ export default function Sessioni() {
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {s.stato === 'pending' && (
                       <>
-                        <button onClick={() => confermaSessione(s.id)} style={{ background: '#ECFDF5', color: '#059669', border: '0.5px solid #A7F3D0', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        <button onClick={() => confermaSessione(s)} style={{ background: '#ECFDF5', color: '#059669', border: '0.5px solid #A7F3D0', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           Conferma
                         </button>
-                        <button onClick={() => rifiutaSessione(s.id)} style={{ background: '#FEF2F2', color: '#DC2626', border: '0.5px solid #FECACA', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        <button onClick={() => rifiutaSessione(s)} style={{ background: '#FEF2F2', color: '#DC2626', border: '0.5px solid #FECACA', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           Rifiuta
                         </button>
                       </>
