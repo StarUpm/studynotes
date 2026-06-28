@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { universita, materie } from '@/lib/dati-universita'
 import Layout from '@/app/components/Layout'
 
 export default function Upload() {
@@ -18,26 +17,59 @@ export default function Upload() {
   const [success, setSuccess] = useState(false)
   const [suggerimentiMateria, setSuggerimentiMateria] = useState<string[]>([])
   const [suggerimentiUniversita, setSuggerimentiUniversita] = useState<string[]>([])
+  const [cercandoMateria, setCercandoMateria] = useState(false)
+  const [cercandoUniversita, setCercandoUniversita] = useState(false)
   const router = useRouter()
 
-  function updateMateria(e: React.ChangeEvent<HTMLInputElement>) {
-    const v = e.target.value
+  const timerMateria = { current: null as any }
+  const timerUniversita = { current: null as any }
+
+  async function cercaMateria(v: string) {
     setMateria(v)
-    setSuggerimentiMateria(v.length > 0 ? materie.filter(m => m.toLowerCase().includes(v.toLowerCase())).slice(0, 6) : [])
+    if (v.length < 2) { setSuggerimentiMateria([]); return }
+    setCercandoMateria(true)
+    if (timerMateria.current) clearTimeout(timerMateria.current)
+    timerMateria.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'materia' })
+        })
+        const data = await res.json()
+        setSuggerimentiMateria(data.risultati || [])
+      } catch (e) { setSuggerimentiMateria([]) }
+      setCercandoMateria(false)
+    }, 400)
   }
 
-  function updateUniversita(e: React.ChangeEvent<HTMLInputElement>) {
-    const v = e.target.value
+  async function cercaUniversita(v: string) {
     setUniversitaSelezionata(v)
-    setSuggerimentiUniversita(v.length > 0 ? universita.filter(u => u.toLowerCase().includes(v.toLowerCase())).slice(0, 6) : [])
+    if (v.length < 2) { setSuggerimentiUniversita([]); return }
+    setCercandoUniversita(true)
+    if (timerUniversita.current) clearTimeout(timerUniversita.current)
+    timerUniversita.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'universita' })
+        })
+        const data = await res.json()
+        setSuggerimentiUniversita(data.risultati || [])
+      } catch (e) { setSuggerimentiUniversita([]) }
+      setCercandoUniversita(false)
+    }, 400)
   }
 
   const handleUpload = async () => {
     if (!file) { setError('Seleziona un file PDF'); return }
     setLoading(true)
     setError('')
-    const { data: userData } = await supabase.auth.getUser()
-    if (!userData.user) { setError('Devi accedere prima'); setLoading(false); return }
+
+    const userData = await supabase.auth.getUser()
+    if (!userData.data.user) { setError('Devi accedere prima'); setLoading(false); return }
+    const uid = userData.data.user.id
 
     const fileName = `${Date.now()}_${file.name}`
     const { error: uploadError } = await supabase.storage.from('appunti').upload(fileName, file)
@@ -49,7 +81,7 @@ export default function Upload() {
       universita: universitaSelezionata,
       prezzo: parseFloat(prezzo) || 0,
       file_url: urlData.publicUrl,
-      autore_id: userData.user.id
+      autore_id: uid
     })
 
     if (dbError) {
@@ -58,13 +90,13 @@ export default function Upload() {
       await fetch('/api/punti', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ utente_id: userData.user.id, azione: 'appunto_caricato' })
+        body: JSON.stringify({ utente_id: uid, azione: 'appunto_caricato' })
       })
       await fetch('/api/notifica', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          utente_id: userData.user.id,
+          utente_id: uid,
           tipo: 'acquisto',
           titolo: 'Appunto pubblicato!',
           messaggio: 'Il tuo appunto "' + titolo + '" è ora disponibile su Klass. Hai guadagnato 50 punti!',
@@ -89,11 +121,12 @@ export default function Upload() {
           {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16, background: '#FEF2F2', padding: '10px 14px', borderRadius: 8 }}>{error}</p>}
           {success && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16, background: '#ECFDF5', padding: '10px 14px', borderRadius: 8 }}>✓ Appunti caricati! Hai guadagnato 50 punti 🎉</p>}
 
-          <input type="text" placeholder="Titolo (es. Analisi Matematica 1 — Limiti)" value={titolo} onChange={e => setTitolo(e.target.value)} style={inputStyle} />
+          <input type="text" placeholder="Titolo (es. Analisi Matematica 1 — Limiti)" value={titolo} onChange={e => setTitolo(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleUpload()} style={inputStyle} />
           <textarea placeholder="Descrizione" value={descrizione} onChange={e => setDescrizione(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
 
           <div style={{ position: 'relative', marginBottom: 12 }}>
-            <input type="text" placeholder="Materia (es. Analisi Matematica)" value={materia} onChange={updateMateria} style={{ ...inputStyle, marginBottom: 0 }} />
+            <input type="text" placeholder="Materia (es. Analisi Matematica)" value={materia} onChange={e => cercaMateria(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+            {cercandoMateria && <p style={{ fontSize: 11, color: '#9CA3AF', padding: '4px 0' }}>Ricerca in corso...</p>}
             {suggerimentiMateria.length > 0 && (
               <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                 {suggerimentiMateria.map(s => (
@@ -104,7 +137,8 @@ export default function Upload() {
           </div>
 
           <div style={{ position: 'relative', marginBottom: 12 }}>
-            <input type="text" placeholder="Università" value={universitaSelezionata} onChange={updateUniversita} style={{ ...inputStyle, marginBottom: 0 }} />
+            <input type="text" placeholder="Università o scuola" value={universitaSelezionata} onChange={e => cercaUniversita(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+            {cercandoUniversita && <p style={{ fontSize: 11, color: '#9CA3AF', padding: '4px 0' }}>Ricerca in corso...</p>}
             {suggerimentiUniversita.length > 0 && (
               <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                 {suggerimentiUniversita.map(s => (
