@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Layout from '@/app/components/Layout'
@@ -19,9 +19,12 @@ export default function Curriculum() {
   const [lingue, setLingue] = useState<Lingua[]>([])
   const [certificazioni, setCertificazioni] = useState<Certificazione[]>([])
   const [nuovaCompetenza, setNuovaCompetenza] = useState('')
+  const [suggerimentiCompetenza, setSuggerimentiCompetenza] = useState<string[]>([])
+  const [cercandoCompetenza, setCercandoCompetenza] = useState(false)
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [success, setSuccess] = useState(false)
+  const timerC = useRef<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -42,6 +45,25 @@ export default function Curriculum() {
     }
     init()
   }, [router])
+
+  async function cercaCompetenza(v: string) {
+    setNuovaCompetenza(v)
+    if (v.length < 2) { setSuggerimentiCompetenza([]); return }
+    setCercandoCompetenza(true)
+    if (timerC.current) clearTimeout(timerC.current)
+    timerC.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'materia' })
+        })
+        const data = await res.json()
+        setSuggerimentiCompetenza(data.risultati || [])
+      } catch (e) { setSuggerimentiCompetenza([]) }
+      setCercandoCompetenza(false)
+    }, 400)
+  }
 
   async function salva() {
     setSalvando(true)
@@ -74,6 +96,7 @@ export default function Curriculum() {
     if (nuovaCompetenza.trim() && !competenze.includes(nuovaCompetenza.trim())) {
       setCompetenze([...competenze, nuovaCompetenza.trim()])
       setNuovaCompetenza('')
+      setSuggerimentiCompetenza([])
     }
   }
 
@@ -105,7 +128,7 @@ export default function Curriculum() {
     setCertificazioni(nuova)
   }
 
-  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', background: 'white', cursor: 'text' } as React.CSSProperties
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', background: 'white' } as React.CSSProperties
   const labelStyle = { fontSize: 12, color: '#9CA3AF', display: 'block', marginBottom: 4 } as React.CSSProperties
   const sectionStyle = { background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24, marginBottom: 16 } as React.CSSProperties
   const addBtnStyle = { fontSize: 13, color: '#185FA5', background: '#EFF6FF', border: '0.5px solid #BFDBFE', padding: '7px 14px', borderRadius: 8, cursor: 'pointer', marginTop: 10 } as React.CSSProperties
@@ -203,7 +226,7 @@ export default function Curriculum() {
                   </div>
                   <div>
                     <label style={labelStyle}>Tipo</label>
-                    <select value={esp.tipo} onChange={e => updateEsperienza(i, 'tipo', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    <select value={esp.tipo} onChange={e => updateEsperienza(i, 'tipo', e.target.value)} style={{ ...inputStyle }}>
                       <option>Lavoro</option>
                       <option>Stage</option>
                       <option>Volontariato</option>
@@ -234,17 +257,29 @@ export default function Curriculum() {
               )
             })}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              placeholder="Aggiungi competenza o materia..."
-              value={nuovaCompetenza}
-              onChange={e => setNuovaCompetenza(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && aggiungiCompetenza()}
-              style={{ ...inputStyle, flex: 1 }}
-            />
-            <button onClick={aggiungiCompetenza} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '0 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
-              Aggiungi
-            </button>
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                placeholder="Cerca competenza o materia..."
+                value={nuovaCompetenza}
+                onChange={e => cercaCompetenza(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && aggiungiCompetenza()}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button onClick={aggiungiCompetenza} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '0 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                Aggiungi
+              </button>
+            </div>
+            {cercandoCompetenza && <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Ricerca in corso...</p>}
+            {suggerimentiCompetenza.length > 0 && (
+              <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                {suggerimentiCompetenza.map(function(s) {
+                  return (
+                    <button key={s} onClick={() => { setCompetenze(prev => prev.includes(s) ? prev : [...prev, s]); setNuovaCompetenza(''); setSuggerimentiCompetenza([]) }} style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>{s}</button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -255,7 +290,7 @@ export default function Curriculum() {
               return (
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'center' }}>
                   <input placeholder="Es. Inglese" value={l.lingua} onChange={e => updateLingua(i, 'lingua', e.target.value)} style={inputStyle} />
-                  <select value={l.livello} onChange={e => updateLingua(i, 'livello', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <select value={l.livello} onChange={e => updateLingua(i, 'livello', e.target.value)} style={inputStyle}>
                     <option>Madrelingua</option>
                     <option>C2 - Padronanza</option>
                     <option>C1 - Avanzato</option>
