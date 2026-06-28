@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { universita } from '@/lib/dati-universita'
@@ -16,6 +16,8 @@ export default function ProfiloUtente() {
   const [curriculum, setCurriculum] = useState('')
   const [isTutor, setIsTutor] = useState(false)
   const [premiumAttivo, setPremiumAttivo] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [caricandoFoto, setCaricandoFoto] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [successoProfilo, setSuccessoProfilo] = useState(false)
   const [erroreProfilo, setErroreProfilo] = useState('')
@@ -26,6 +28,8 @@ export default function ProfiloUtente() {
   const [guadagniAppunti, setGuadagniAppunti] = useState(0)
   const [guadagniSessioni, setGuadagniSessioni] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   useEffect(() => { caricaDati() }, [])
@@ -33,14 +37,15 @@ export default function ProfiloUtente() {
   async function caricaDati() {
     const userData = await supabase.auth.getUser()
     if (!userData.data.user) { router.push('/login'); return }
-    const userId = userData.data.user.id
+    const uid = userData.data.user.id
+    setUserId(uid)
 
     const [profiloResult, acquistiResult, sessioniSResult, sessioniTResult, notesResult] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('purchases').select('*, notes(titolo, materia)').eq('buyer_id', userId).order('created_at', { ascending: false }),
-      supabase.from('tutoring_sessions').select('*').eq('studente_id', userId).order('data_ora', { ascending: false }),
-      supabase.from('tutoring_sessions').select('*').eq('tutor_id', userId).order('data_ora', { ascending: false }),
-      supabase.from('notes').select('id').eq('autore_id', userId)
+      supabase.from('profiles').select('*').eq('id', uid).single(),
+      supabase.from('purchases').select('*, notes(titolo, materia)').eq('buyer_id', uid).order('created_at', { ascending: false }),
+      supabase.from('tutoring_sessions').select('*').eq('studente_id', uid).order('data_ora', { ascending: false }),
+      supabase.from('tutoring_sessions').select('*').eq('tutor_id', uid).order('data_ora', { ascending: false }),
+      supabase.from('notes').select('id').eq('autore_id', uid)
     ])
 
     if (profiloResult.data) {
@@ -53,6 +58,7 @@ export default function ProfiloUtente() {
       setCurriculum(p.curriculum || '')
       setIsTutor(p.is_tutor || false)
       setPremiumAttivo(p.premium_attivo || false)
+      setAvatarUrl(p.avatar_url || '')
     }
     if (acquistiResult.data) setAcquisti(acquistiResult.data)
     if (sessioniSResult.data) setSessioniStudente(sessioniSResult.data)
@@ -76,6 +82,21 @@ export default function ProfiloUtente() {
     setLoading(false)
   }
 
+  async function caricaFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCaricandoFoto(true)
+    const ext = file.name.split('.').pop()
+    const fileName = userId + '_' + Date.now() + '.' + ext
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true })
+    if (uploadError) { alert('Errore nel caricamento: ' + uploadError.message); setCaricandoFoto(false); return }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
+    const nuovoUrl = urlData.publicUrl
+    await supabase.from('profiles').update({ avatar_url: nuovoUrl }).eq('id', userId)
+    setAvatarUrl(nuovoUrl)
+    setCaricandoFoto(false)
+  }
+
   function updateUniversita(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value
     setUniversitaInput(v)
@@ -85,12 +106,10 @@ export default function ProfiloUtente() {
   async function salvaProfilo() {
     setSalvando(true)
     setErroreProfilo('')
-    const userData = await supabase.auth.getUser()
-    if (!userData.data.user) return
     const result = await supabase.from('profiles').update({
       nome, cognome, universita: universitaInput,
       tipo_istituto: tipoIstituto, anno_studio: annoStudio, curriculum
-    }).eq('id', userData.data.user.id)
+    }).eq('id', userId)
     if (result.error) { setErroreProfilo('Errore nel salvataggio') }
     else { setSuccessoProfilo(true); setTimeout(() => setSuccessoProfilo(false), 3000) }
     setSalvando(false)
@@ -115,7 +134,7 @@ export default function ProfiloUtente() {
   const saldoTotale = guadagniAppunti + guadagniSessioni
   const nomeVisibile = nome && cognome ? nome + ' ' + cognome : nome || 'Il mio profilo'
 
-  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' } as React.CSSProperties
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white', cursor: 'text' } as React.CSSProperties
 
   if (loading) return (
     <Layout>
@@ -129,9 +148,19 @@ export default function ProfiloUtente() {
     <Layout>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 32px' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'white' }}>
-            {nomeVisibile.charAt(0).toUpperCase()}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
+          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileInputRef.current?.click()}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }} />
+            ) : (
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'white' }}>
+                {nomeVisibile.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'white', border: '0.5px solid #e5e7eb', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+              {caricandoFoto ? '⏳' : '📷'}
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={caricaFoto} style={{ display: 'none' }} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -140,6 +169,9 @@ export default function ProfiloUtente() {
               {isTutor && <span style={{ fontSize: 11, background: '#ECFDF5', color: '#059669', padding: '2px 10px', borderRadius: 20 }}>Tutor</span>}
             </div>
             {universitaInput && <p style={{ fontSize: 13, color: '#9CA3AF' }}>{universitaInput}</p>}
+            <p style={{ fontSize: 12, color: '#185FA5', cursor: 'pointer', marginTop: 4 }} onClick={() => fileInputRef.current?.click()}>
+              {caricandoFoto ? 'Caricamento...' : 'Cambia foto profilo'}
+            </p>
           </div>
         </div>
 
@@ -177,8 +209,8 @@ export default function ProfiloUtente() {
             {successoProfilo && <p style={{ color: '#059669', fontSize: 13, marginBottom: 16 }}>✓ Profilo salvato!</p>}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
-              <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+              <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} onKeyDown={e => e.key === 'Enter' && salvaProfilo()} style={{ ...inputStyle, marginBottom: 0 }} />
+              <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} onKeyDown={e => e.key === 'Enter' && salvaProfilo()} style={{ ...inputStyle, marginBottom: 0 }} />
             </div>
 
             <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
