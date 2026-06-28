@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { universita, materie } from '@/lib/dati-universita'
 
 export default function Onboarding() {
   const [step, setStep] = useState(1)
@@ -20,7 +19,12 @@ export default function Onboarding() {
   const [error, setError] = useState('')
   const [suggerimentiUniversita, setSuggerimentiUniversita] = useState<string[]>([])
   const [suggerimentiMateria, setSuggerimentiMateria] = useState<string[]>([])
+  const [cercandoUniversita, setCercandoUniversita] = useState(false)
+  const [cercandoMateria, setCercandoMateria] = useState(false)
   const router = useRouter()
+
+  const timerU = { current: null as any }
+  const timerM = { current: null as any }
 
   const TOTALE_STEP = vuoleDiventareTutor ? 4 : 3
 
@@ -35,14 +39,42 @@ export default function Onboarding() {
     checkAuth()
   }, [router])
 
-  function updateUniversita(v: string) {
+  async function cercaUniversita(v: string) {
     setUniversitaInput(v)
-    setSuggerimentiUniversita(v.length > 0 ? universita.filter(u => u.toLowerCase().includes(v.toLowerCase())).slice(0, 5) : [])
+    if (v.length < 2) { setSuggerimentiUniversita([]); return }
+    setCercandoUniversita(true)
+    if (timerU.current) clearTimeout(timerU.current)
+    timerU.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'universita' })
+        })
+        const data = await res.json()
+        setSuggerimentiUniversita(data.risultati || [])
+      } catch (e) { setSuggerimentiUniversita([]) }
+      setCercandoUniversita(false)
+    }, 400)
   }
 
-  function updateMateriaInsegna(v: string) {
+  async function cercaMateria(v: string) {
     setMateriaInsegna(v)
-    setSuggerimentiMateria(v.length > 0 ? materie.filter(m => m.toLowerCase().includes(v.toLowerCase())).slice(0, 5) : [])
+    if (v.length < 2) { setSuggerimentiMateria([]); return }
+    setCercandoMateria(true)
+    if (timerM.current) clearTimeout(timerM.current)
+    timerM.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'materia' })
+        })
+        const data = await res.json()
+        setSuggerimentiMateria(data.risultati || [])
+      } catch (e) { setSuggerimentiMateria([]) }
+      setCercandoMateria(false)
+    }, 400)
   }
 
   function toggleMateria(m: string) {
@@ -95,9 +127,10 @@ export default function Onboarding() {
 
   const materiePopolar = ['Analisi Matematica', 'Diritto Privato', 'Economia Aziendale', 'Fisica', 'Chimica', 'Storia', 'Letteratura Italiana', 'Diritto Pubblico', 'Statistica', 'Informatica', 'Biologia', 'Filosofia']
 
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' } as React.CSSProperties
+
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-
       <div style={{ width: '100%', maxWidth: 560 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -111,7 +144,6 @@ export default function Onboarding() {
 
         {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16, background: '#FEF2F2', padding: '10px 14px', borderRadius: 8 }}>{error}</p>}
 
-        {/* STEP 1 — Chi sei */}
         {step === 1 && (
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
             <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>👋</div>
@@ -121,20 +153,17 @@ export default function Onboarding() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nome</p>
-                <input type="text" placeholder="Marco" value={nome} onChange={e => setNome(e.target.value)} style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }} />
+                <input type="text" placeholder="Marco" value={nome} onChange={e => setNome(e.target.value)} onKeyDown={e => e.key === 'Enter' && nome && setStep(2)} style={inputStyle} />
               </div>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Cognome</p>
-                <input type="text" placeholder="Rossi" value={cognome} onChange={e => setCognome(e.target.value)} style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }} />
+                <input type="text" placeholder="Rossi" value={cognome} onChange={e => setCognome(e.target.value)} onKeyDown={e => e.key === 'Enter' && nome && setStep(2)} style={inputStyle} />
               </div>
             </div>
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>Tipo di istituto</p>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              {[
-                { id: 'universita', label: '🎓 Università' },
-                { id: 'liceo', label: '🏫 Scuola superiore' },
-              ].map(function(t) {
+              {[{ id: 'universita', label: '🎓 Università' }, { id: 'liceo', label: '🏫 Scuola superiore' }].map(function(t) {
                 return (
                   <button key={t.id} onClick={() => setTipoIstituto(t.id)} style={{ flex: 1, padding: '12px', borderRadius: 10, fontSize: 13, cursor: 'pointer', border: tipoIstituto === t.id ? 'none' : '0.5px solid #e5e7eb', background: tipoIstituto === t.id ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tipoIstituto === t.id ? 'white' : '#374151', fontWeight: tipoIstituto === t.id ? 600 : 400 }}>
                     {t.label}
@@ -147,7 +176,8 @@ export default function Onboarding() {
               {tipoIstituto === 'universita' ? 'Università' : 'Nome della scuola'}
             </p>
             <div style={{ position: 'relative', marginBottom: 16 }}>
-              <input type="text" placeholder={tipoIstituto === 'universita' ? 'Es. Università di Bologna' : 'Es. Liceo Scientifico Volta'} value={universitaInput} onChange={e => updateUniversita(e.target.value)} style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }} />
+              <input type="text" placeholder={tipoIstituto === 'universita' ? 'Es. Università di Bologna' : 'Es. Liceo Scientifico Volta'} value={universitaInput} onChange={e => cercaUniversita(e.target.value)} style={inputStyle} />
+              {cercandoUniversita && <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Ricerca in corso...</p>}
               {suggerimentiUniversita.length > 0 && (
                 <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                   {suggerimentiUniversita.map(s => (
@@ -158,7 +188,7 @@ export default function Onboarding() {
             </div>
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Anno di corso</p>
-            <input type="text" placeholder="Es. 2° anno Triennale" value={annoStudio} onChange={e => setAnnoStudio(e.target.value)} style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white', marginBottom: 24 }} />
+            <input type="text" placeholder="Es. 2° anno Triennale" value={annoStudio} onChange={e => setAnnoStudio(e.target.value)} onKeyDown={e => e.key === 'Enter' && nome && setStep(2)} style={{ ...inputStyle, marginBottom: 24 }} />
 
             <button onClick={() => { if (!nome) { setError('Inserisci il tuo nome'); return }; setError(''); setStep(2) }} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
               Continua →
@@ -166,12 +196,11 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* STEP 2 — Materie interesse */}
         {step === 2 && (
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
             <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>📚</div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 8, textAlign: 'center' }}>Le tue materie</h2>
-            <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 28, textAlign: 'center' }}>Seleziona le materie che studi — ti mostreremo appunti e tutor pertinenti</p>
+            <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 28, textAlign: 'center' }}>Seleziona le materie che studi</p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
               {materiePopolar.map(function(m) {
@@ -184,22 +213,13 @@ export default function Onboarding() {
               })}
             </div>
 
-            <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 24, textAlign: 'center' }}>
-              {materieInteresse.length === 0 ? 'Seleziona almeno una materia' : materieInteresse.length + ' materie selezionate'}
-            </p>
-
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setStep(1)} style={{ flex: 1, background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: 14, borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
-                ← Indietro
-              </button>
-              <button onClick={() => setStep(3)} style={{ flex: 2, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
-                Continua →
-              </button>
+              <button onClick={() => setStep(1)} style={{ flex: 1, background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: 14, borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>← Indietro</button>
+              <button onClick={() => setStep(3)} style={{ flex: 2, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Continua →</button>
             </div>
           </div>
         )}
 
-        {/* STEP 3 — Vuoi diventare tutor? */}
         {step === 3 && (
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
             <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>💰</div>
@@ -218,9 +238,7 @@ export default function Onboarding() {
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setStep(2)} style={{ flex: 1, background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: 14, borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
-                ← Indietro
-              </button>
+              <button onClick={() => setStep(2)} style={{ flex: 1, background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: 14, borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>← Indietro</button>
               <button onClick={() => vuoleDiventareTutor ? setStep(4) : completa()} disabled={loading} style={{ flex: 2, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
                 {loading ? 'Salvataggio...' : vuoleDiventareTutor ? 'Continua →' : 'Inizia a usare Klass! 🚀'}
               </button>
@@ -228,7 +246,6 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* STEP 4 — Setup tutor */}
         {step === 4 && (
           <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32 }}>
             <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>👨‍🏫</div>
@@ -237,7 +254,8 @@ export default function Onboarding() {
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Materia che insegni</p>
             <div style={{ position: 'relative', marginBottom: 16 }}>
-              <input type="text" placeholder="Es. Analisi Matematica" value={materiaInsegna} onChange={e => updateMateriaInsegna(e.target.value)} style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }} />
+              <input type="text" placeholder="Es. Analisi Matematica" value={materiaInsegna} onChange={e => cercaMateria(e.target.value)} style={inputStyle} />
+              {cercandoMateria && <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Ricerca in corso...</p>}
               {suggerimentiMateria.length > 0 && (
                 <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                   {suggerimentiMateria.map(s => (
@@ -248,16 +266,14 @@ export default function Onboarding() {
             </div>
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Tariffa oraria (€)</p>
-            <input type="number" step="0.50" placeholder="Es. 15.00" value={tariffaOraria} onChange={e => setTariffaOraria(e.target.value)} style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white', marginBottom: 16 }} />
+            <input type="number" step="0.50" placeholder="Es. 15.00" value={tariffaOraria} onChange={e => setTariffaOraria(e.target.value)} onKeyDown={e => e.key === 'Enter' && completa()} style={{ ...inputStyle, marginBottom: 16 }} />
 
             <div style={{ background: '#ECFDF5', border: '0.5px solid #A7F3D0', borderRadius: 10, padding: '12px 16px', marginBottom: 24 }}>
               <p style={{ fontSize: 12, color: '#059669' }}>💡 La piattaforma trattiene il 20% — il restante 80% è tuo!</p>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setStep(3)} style={{ flex: 1, background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: 14, borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
-                ← Indietro
-              </button>
+              <button onClick={() => setStep(3)} style={{ flex: 1, background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: 14, borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>← Indietro</button>
               <button onClick={completa} disabled={loading} style={{ flex: 2, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
                 {loading ? 'Salvataggio...' : 'Inizia a usare Klass! 🚀'}
               </button>
