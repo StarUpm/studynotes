@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { universita } from '@/lib/dati-universita'
 import Layout from '@/app/components/Layout'
 
 export default function ProfiloUtente() {
@@ -13,7 +12,6 @@ export default function ProfiloUtente() {
   const [universitaInput, setUniversitaInput] = useState('')
   const [tipoIstituto, setTipoIstituto] = useState('universita')
   const [annoStudio, setAnnoStudio] = useState('')
-  const [curriculum, setCurriculum] = useState('')
   const [isTutor, setIsTutor] = useState(false)
   const [premiumAttivo, setPremiumAttivo] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState('')
@@ -22,6 +20,7 @@ export default function ProfiloUtente() {
   const [successoProfilo, setSuccessoProfilo] = useState(false)
   const [erroreProfilo, setErroreProfilo] = useState('')
   const [suggerimenti, setSuggerimenti] = useState<string[]>([])
+  const [cercandoUniversita, setCercandoUniversita] = useState(false)
   const [acquisti, setAcquisti] = useState<any[]>([])
   const [sessioniStudente, setSessioniStudente] = useState<any[]>([])
   const [sessioniTutor, setSessioniTutor] = useState<any[]>([])
@@ -30,6 +29,7 @@ export default function ProfiloUtente() {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const timerU = useRef<any>(null)
   const router = useRouter()
 
   useEffect(() => { caricaDati() }, [])
@@ -55,7 +55,6 @@ export default function ProfiloUtente() {
       setUniversitaInput(p.universita || '')
       setTipoIstituto(p.tipo_istituto || 'universita')
       setAnnoStudio(p.anno_studio || '')
-      setCurriculum(p.curriculum || '')
       setIsTutor(p.is_tutor || false)
       setPremiumAttivo(p.premium_attivo || false)
       setAvatarUrl(p.avatar_url || '')
@@ -82,6 +81,25 @@ export default function ProfiloUtente() {
     setLoading(false)
   }
 
+  async function cercaUniversita(v: string) {
+    setUniversitaInput(v)
+    if (v.length < 2) { setSuggerimenti([]); return }
+    setCercandoUniversita(true)
+    if (timerU.current) clearTimeout(timerU.current)
+    timerU.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'universita' })
+        })
+        const data = await res.json()
+        setSuggerimenti(data.risultati || [])
+      } catch (e) { setSuggerimenti([]) }
+      setCercandoUniversita(false)
+    }, 400)
+  }
+
   async function caricaFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -97,18 +115,12 @@ export default function ProfiloUtente() {
     setCaricandoFoto(false)
   }
 
-  function updateUniversita(e: React.ChangeEvent<HTMLInputElement>) {
-    const v = e.target.value
-    setUniversitaInput(v)
-    setSuggerimenti(v.length > 0 ? universita.filter(u => u.toLowerCase().includes(v.toLowerCase())).slice(0, 6) : [])
-  }
-
   async function salvaProfilo() {
     setSalvando(true)
     setErroreProfilo('')
     const result = await supabase.from('profiles').update({
       nome, cognome, universita: universitaInput,
-      tipo_istituto: tipoIstituto, anno_studio: annoStudio, curriculum
+      tipo_istituto: tipoIstituto, anno_studio: annoStudio
     }).eq('id', userId)
     if (result.error) { setErroreProfilo('Errore nel salvataggio') }
     else { setSuccessoProfilo(true); setTimeout(() => setSuccessoProfilo(false), 3000) }
@@ -134,7 +146,7 @@ export default function ProfiloUtente() {
   const saldoTotale = guadagniAppunti + guadagniSessioni
   const nomeVisibile = nome && cognome ? nome + ' ' + cognome : nome || 'Il mio profilo'
 
-  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white', cursor: 'text' } as React.CSSProperties
+  const inputStyle = { width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 12, background: 'white' } as React.CSSProperties
 
   if (loading) return (
     <Layout>
@@ -225,7 +237,8 @@ export default function ProfiloUtente() {
             </div>
 
             <div style={{ position: 'relative', marginBottom: 12 }}>
-              <input type="text" placeholder={tipoIstituto === 'universita' ? 'Università che frequenti' : 'Nome della scuola'} value={universitaInput} onChange={updateUniversita} style={{ ...inputStyle, marginBottom: 0 }} />
+              <input type="text" placeholder={tipoIstituto === 'universita' ? 'Università che frequenti' : 'Nome della scuola'} value={universitaInput} onChange={e => cercaUniversita(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+              {cercandoUniversita && <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Ricerca in corso...</p>}
               {suggerimenti.length > 0 && (
                 <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                   {suggerimenti.map(function(s) {
@@ -235,7 +248,7 @@ export default function ProfiloUtente() {
               )}
             </div>
 
-            <input type="text" placeholder="Anno di corso (es. 2° anno Triennale)" value={annoStudio} onChange={e => setAnnoStudio(e.target.value)} style={inputStyle} />
+            <input type="text" placeholder="Anno di corso (es. 2° anno Triennale)" value={annoStudio} onChange={e => setAnnoStudio(e.target.value)} onKeyDown={e => e.key === 'Enter' && salvaProfilo()} style={inputStyle} />
 
             <button onClick={salvaProfilo} disabled={salvando} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 13, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: salvando ? 0.7 : 1 }}>
               {salvando ? 'Salvataggio...' : 'Salva profilo'}
