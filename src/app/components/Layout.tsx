@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CookieBanner from '@/app/components/CookieBanner'
 
 type Notifica = {
   id: string
@@ -100,7 +101,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const nonLette = notifiche.filter(function(n) { return !n.letta }).length
 
   return (
-    <div style={{ fontFamily: 'var(--font-sans, system-ui)', background: '#f9fafb', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ fontFamily: 'var(--font-sans, system-ui)', background: '#f9fafb', minHeight: '100vh', display: 'flex', flexDirection: 'column', cursor: 'default' }}>
 
       {menuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
@@ -135,7 +136,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div style={{ marginTop: 24 }}>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 8 }}>Resta aggiornato</p>
               <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.4)', paddingBottom: 8 }}>
-                <input type="email" placeholder="La tua email" value={emailFooter} onChange={e => setEmailFooter(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 13, flex: 1, outline: 'none' }} />
+                <input type="email" placeholder="La tua email" value={emailFooter} onChange={e => setEmailFooter(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 13, flex: 1, outline: 'none', cursor: 'text' }} />
                 <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer' }}>Iscriviti</button>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 20 }}>© 2026 Klass</p>
@@ -225,6 +226,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </nav>
 
       <div style={{ flex: 1 }}>{children}</div>
+      <CookieBanner />
 
       <footer style={{ background: '#042C53', padding: '48px 40px 0', marginTop: 'auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1.6fr', gap: 32, paddingBottom: 40, borderBottom: '0.5px solid rgba(255,255,255,0.12)' }}>
@@ -232,7 +234,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Importa contenuti', '/importa'], ['Forum Q&A', '/forum']] },
             { title: 'Account', links: [['Registrati', '/register'], ['Accedi', '/login'], ['Il mio profilo', '/profilo-utente'], ['Le mie sessioni', '/sessioni'], ['I miei punti', '/punti']] },
             { title: 'Premium', links: [['👑 Klass Premium', '/premium'], ['Piano Mensile', '/premium'], ['Piano Trimestrale', '/premium'], ['Piano Annuale', '/premium']] },
-            { title: 'Link utili', links: [['Privacy Policy', '#'], ['Termini e condizioni', '#'], ['Cookie Policy', '#'], ['FAQ', '#'], ['Contattaci', '#']] },
+            { title: 'Link utili', links: [['Privacy Policy', '/privacy'], ['Termini e condizioni', '/termini'], ['Cookie Policy', '/privacy'], ['FAQ', '#'], ['Contattaci', '#']] },
           ].map(function(col) {
             return (
               <div key={col.title}>
@@ -246,7 +248,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div>
             <h4 style={{ color: 'white', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>Iscriviti alla newsletter</h4>
             <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.4)', paddingBottom: 8, marginBottom: 24 }}>
-              <input type="email" placeholder="La tua email" value={emailFooter} onChange={e => setEmailFooter(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 13, flex: 1, outline: 'none' }} />
+              <input type="email" placeholder="La tua email" value={emailFooter} onChange={e => setEmailFooter(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 13, flex: 1, outline: 'none', cursor: 'text' }} />
               <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer' }}>Iscriviti</button>
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'white', letterSpacing: -1, marginBottom: 16 }}>Klass</div>
@@ -258,7 +260,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div style={{ padding: '18px 0', textAlign: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>© 2026 Klass — Tutti i diritti riservati</p>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>© 2026 Klass — Tutti i diritti riservati · <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Privacy</Link> · <Link href="/termini" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Termini</Link></p>
         </div>
       </footer>
     </div>
