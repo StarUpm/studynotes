@@ -192,8 +192,8 @@ export default function ProfiloUtente() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {['profilo', 'acquisti', 'sessioni', 'calendario', 'disponibilita', 'accessibilita'].map(function(t) {
-            const label = t === 'disponibilita' ? 'Disponibilità' : t === 'accessibilita' ? '⚙️ Studio' : t
+          {['profilo', 'curriculum', 'acquisti', 'sessioni', 'calendario', 'disponibilita', 'accessibilita'].map(function(t) {
+            const label = t === 'disponibilita' ? 'Disponibilità' : t === 'accessibilita' ? '⚙️ Studio' : t === 'curriculum' ? '📋 Curriculum' : t
             return (
               <button key={t} onClick={function() { setTab(t) }} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', background: tab === t ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tab === t ? 'white' : '#6B7280', boxShadow: tab === t ? 'none' : '0 0 0 0.5px #e5e7eb', textTransform: 'capitalize' }}>
                 {label}
@@ -236,10 +236,20 @@ export default function ProfiloUtente() {
             </div>
 
             <input type="text" placeholder="Anno di corso (es. 2° anno Triennale)" value={annoStudio} onChange={e => setAnnoStudio(e.target.value)} style={inputStyle} />
-            <textarea placeholder="Breve curriculum: studi, esperienze, competenze..." value={curriculum} onChange={e => setCurriculum(e.target.value)} rows={5} style={{ ...inputStyle, resize: 'vertical' }} />
 
             <button onClick={salvaProfilo} disabled={salvando} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 13, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: salvando ? 0.7 : 1 }}>
               {salvando ? 'Salvataggio...' : 'Salva profilo'}
+            </button>
+          </div>
+        )}
+
+        {tab === 'curriculum' && (
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 8 }}>Il mio curriculum</h3>
+            <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>Aggiungi istruzione, esperienze, competenze, lingue e certificazioni</p>
+            <button onClick={function() { router.push('/curriculum') }} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              Modifica curriculum →
             </button>
           </div>
         )}
