@@ -31,73 +31,27 @@ export async function POST(request: NextRequest) {
 
     const trascrizione_id = trascrizione.data.id
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const groqFormData = new FormData()
+    groqFormData.append('file', file)
+    groqFormData.append('model', 'whisper-large-v3')
+    groqFormData.append('language', 'it')
+    groqFormData.append('response_format', 'text')
 
-    const formDataGemini = new FormData()
-    const blob = new Blob([buffer], { type: file.type })
-    formDataGemini.append('file', blob, file.name)
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
+      },
+      body: groqFormData
+    })
 
-    const uploadResponse = await fetch(
-      `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Goog-Upload-Command': 'start, upload, finalize',
-          'X-Goog-Upload-Header-Content-Length': buffer.length.toString(),
-          'X-Goog-Upload-Header-Content-Type': file.type,
-        },
-        body: blob
-      }
-    )
-
-    if (!uploadResponse.ok) {
+    if (!groqResponse.ok) {
       await supabase.from('trascrizioni').update({ stato: 'errore' }).eq('id', trascrizione_id)
-      return NextResponse.json({ error: 'Errore nel caricamento audio' }, { status: 500 })
+      const errText = await groqResponse.text()
+      return NextResponse.json({ error: 'Errore nella trascrizione: ' + errText }, { status: 500 })
     }
 
-    const uploadData = await uploadResponse.json()
-    const fileUri = uploadData.file?.uri
-
-    if (!fileUri) {
-      await supabase.from('trascrizioni').update({ stato: 'errore' }).eq('id', trascrizione_id)
-      return NextResponse.json({ error: 'Errore nel caricamento audio' }, { status: 500 })
-    }
-
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                file_data: {
-                  mime_type: file.type,
-                  file_uri: fileUri
-                }
-              },
-              {
-                text: 'Trascrivi questo audio in italiano nel modo più accurato possibile. Mantieni la punteggiatura corretta e organizza il testo in paragrafi logici. Rimuovi i rumori di fondo e le interruzioni. Restituisci solo il testo trascritto senza commenti aggiuntivi.'
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 8000
-          }
-        })
-      }
-    )
-
-    if (!geminiResponse.ok) {
-      await supabase.from('trascrizioni').update({ stato: 'errore' }).eq('id', trascrizione_id)
-      return NextResponse.json({ error: 'Errore nella trascrizione AI' }, { status: 500 })
-    }
-
-    const geminiData = await geminiResponse.json()
-    const testo = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const testo = await groqResponse.text()
 
     await supabase.from('trascrizioni').update({
       testo_trascritto: testo,
