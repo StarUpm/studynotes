@@ -9,39 +9,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Testo troppo corto' }, { status: 400 })
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Crea un riassunto strutturato in italiano di questo testo universitario. 
-              Il riassunto deve:
-              - Essere diviso in sezioni con titoli chiari
-              - Evidenziare i concetti chiave
-              - Essere circa 1/4 del testo originale
-              - Essere scritto in modo chiaro e accessibile
-              - Includere una sezione "Punti chiave" alla fine con i 5 concetti più importanti
-              
-              Testo: ${testo.substring(0, 10000)}`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 2000
-          }
-        })
-      }
-    )
+    const prompt = `Crea un riassunto strutturato in italiano di questo testo universitario. 
+Il riassunto deve:
+- Essere diviso in sezioni con titoli chiari
+- Evidenziare i concetti chiave
+- Essere circa 1/4 del testo originale
+- Essere scritto in modo chiaro e accessibile
+- Includere una sezione "Punti chiave" alla fine con i 5 concetti più importanti
 
-    if (!response.ok) {
-      return NextResponse.json({ error: 'Errore API Gemini' }, { status: 500 })
+Testo: ${testo.substring(0, 8000)}`
+
+    const apiKey = process.env.GROQ_API_KEY
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3
+      })
+    })
+
+    if (!groqResponse.ok) {
+      return NextResponse.json({ error: 'Errore API Groq' }, { status: 500 })
     }
 
-    const data = await response.json()
-    const riassunto = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const data = await groqResponse.json()
+    const riassunto = data.choices?.[0]?.message?.content || ''
 
     return NextResponse.json({ riassunto })
   } catch (error) {
