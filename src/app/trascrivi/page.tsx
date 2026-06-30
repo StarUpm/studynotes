@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Layout from '@/app/components/Layout'
@@ -18,11 +18,14 @@ export default function Trascrivi() {
   const [file, setFile] = useState<File | null>(null)
   const [titolo, setTitolo] = useState('')
   const [materia, setMateria] = useState('')
+  const [suggerimentiMateria, setSuggerimentiMateria] = useState<string[]>([])
+  const [cercandoMateria, setCercandoMateria] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [trascrizioni, setTrascrizioni] = useState<Trascrizione[]>([])
   const [trascrizioneAttiva, setTrscrizioneAttiva] = useState<Trascrizione | null>(null)
   const [userId, setUserId] = useState('')
+  const timerM = useRef<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -42,6 +45,25 @@ export default function Trascrivi() {
       .eq('utente_id', uid)
       .order('created_at', { ascending: false })
     if (result.data) setTrascrizioni(result.data)
+  }
+
+  async function cercaMateria(v: string) {
+    setMateria(v)
+    if (v.length < 2) { setSuggerimentiMateria([]); return }
+    setCercandoMateria(true)
+    if (timerM.current) clearTimeout(timerM.current)
+    timerM.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/cerca-universita', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: v, tipo: 'materia' })
+        })
+        const data = await res.json()
+        setSuggerimentiMateria(data.risultati || [])
+      } catch (e) { setSuggerimentiMateria([]) }
+      setCercandoMateria(false)
+    }, 400)
   }
 
   async function trascrivi() {
@@ -121,13 +143,23 @@ export default function Trascrivi() {
               />
 
               <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Materia (opzionale)</p>
-              <input
-                type="text"
-                placeholder="Es. Analisi Matematica"
-                value={materia}
-                onChange={e => setMateria(e.target.value)}
-                style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 14, background: 'white' }}
-              />
+              <div style={{ position: 'relative', marginBottom: 14 }}>
+                <input
+                  type="text"
+                  placeholder="Es. Analisi Matematica"
+                  value={materia}
+                  onChange={e => cercaMateria(e.target.value)}
+                  style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', background: 'white' }}
+                />
+                {cercandoMateria && <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Ricerca in corso...</p>}
+                {suggerimentiMateria.length > 0 && (
+                  <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                    {suggerimentiMateria.map(s => (
+                      <button key={s} onClick={() => { setMateria(s); setSuggerimentiMateria([]) }} style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>{s}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>File audio</p>
               <div style={{ border: '1px dashed #e5e7eb', borderRadius: 12, padding: 20, background: '#f9fafb', textAlign: 'center', marginBottom: 20 }}>
@@ -154,7 +186,7 @@ export default function Trascrivi() {
                 disabled={loading}
                 style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
               >
-                {loading ? '⏳ Trascrizione in corso... (può richiedere qualche minuto)' : '🎙️ Trascrivi lezione'}
+                {loading ? '⏳ Trascrizione in corso...' : '🎙️ Trascrivi lezione'}
               </button>
             </div>
 
@@ -250,20 +282,6 @@ export default function Trascrivi() {
                 <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.6, marginBottom: 20 }}>
                   Carica una registrazione audio e l&apos;AI la convertirà in testo che potrai usare per studiare
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
-                  {[
-                    '🎙️ Registra la lezione con il telefono',
-                    '📤 Carica il file audio (MP3, WAV, M4A)',
-                    '⏳ L\'AI trascrive automaticamente',
-                    '🤖 Usa il testo per quiz e flashcard',
-                  ].map(function(step, i) {
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#374151' }}>
-                        {step}
-                      </div>
-                    )
-                  })}
-                </div>
               </div>
             )}
           </div>
