@@ -23,27 +23,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  cursor: default !important;
 }
 
 * {
-  cursor: default;
+  cursor: default !important;
   box-sizing: border-box;
 }
 
 input, textarea {
-  cursor: text;
+  cursor: text !important;
 }
 
-select {
-  cursor: pointer;
-}
-
-button, a {
-  cursor: pointer;
+select, button, a, label {
+  cursor: pointer !important;
 }
 
 input[type="file"],
 input[type="radio"],
 input[type="checkbox"] {
-  cursor: pointer;
+  cursor: pointer !important;
 }
