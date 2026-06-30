@@ -16,52 +16,79 @@ export async function POST(request: NextRequest) {
 
     const videoId = videoIdMatch[1]
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                file_data: {
-                  mime_type: 'video/*',
-                  file_uri: `https://www.youtube.com/watch?v=${videoId}`
-                }
-              },
-              {
-                text: `Trascrivi e riassumi il contenuto di questo video in italiano. 
-                Organizza il contenuto in:
-                1. Trascrizione completa (o riassunto fedele se troppo lungo)
-                2. Concetti principali
-                3. Punti chiave da ricordare
-                
-                Restituisci solo il testo senza commenti aggiuntivi.`
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 4000
-          }
-        })
-      }
+    const transcriptResponse = await fetch(
+      `https://www.youtube.com/watch?v=${videoId}`
     )
+    const html = await transcriptResponse.text()
 
-    if (!response.ok) {
-      const errData = await response.json()
-      return NextResponse.json({ error: 'Errore nel processare il video: ' + (errData.error?.message || 'sconosciuto') }, { status: 500 })
+    const titleMatch = html.match(/<title>(.*?)<\/title>/)
+    const titoloVideo = titleMatch ? titleMatch[1].replace(' - YouTube', '') : 'Video YouTube'
+
+    const captionsMatch = html.match(/"captionTracks":\s*(\[.*?\])/)
+    if (!captionsMatch) {
+      return NextResponse.json({ error: 'Questo video non ha sottotitoli disponibili. Prova con un video che abbia i sottotitoli attivati (CC).' }, { status: 400 })
     }
 
-    const data = await response.json()
-    const testo = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-    if (!testo) {
-      return NextResponse.json({ error: 'Non è stato possibile estrarre il contenuto dal video' }, { status: 500 })
+    let captionUrl = ''
+    try {
+      const tracks = JSON.parse(captionsMatch[1])
+      const italianTrack = tracks.find((t: any) => t.languageCode === 'it')
+      const englishTrack = tracks.find((t: any) => t.languageCode === 'en')
+      const track = italianTrack || englishTrack || tracks[0]
+      captionUrl = track.baseUrl
+    } catch (e) {
+      return NextResponse.json({ error: 'Errore nel leggere i sottotitoli del video' }, { status: 500 })
     }
 
-    return NextResponse.json({ testo, videoId })
+    if (!captionUrl) {
+      return NextResponse.json({ error: 'Nessun sottotitolo trovato per questo video' }, { status: 400 })
+    }
+
+    const captionResponse = await fetch(captionUrl)
+    const captionXml = await captionResponse.text()
+
+    const textMatches = captionXml.match(/<text[^>]*>([^<]*)<\/text>/g) || []
+    const trascrizioneGrezza = textMatches
+      .map(t => t.replace(/<[^>]*>/g, ''))
+      .join(' ')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .trim()
+
+    if (!trascrizioneGrezza || trascrizioneGrezza.length < 20) {
+      return NextResponse.json({ error: 'Trascrizione vuota o troppo corta' }, { status: 400 })
+    }
+
+    const prompt = `Questo è il testo trascritto automaticamente da un video YouTube intitolato "${titoloVideo}". Riorganizzalo in italiano in modo chiaro e leggibile:
+
+1. Correggi la punteggiatura e la struttura delle frasi
+2. Organizza il contenuto in paragrafi logici
+3. Alla fine aggiungi una sezione "Punti chiave" con i concetti principali
+
+Testo grezzo: ${trascrizioneGrezza.substring(0, 8000)}`
+
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3
+      })
+    })
+
+    if (!groqResponse.ok) {
+      return NextResponse.json({ error: 'Errore nella rielaborazione del testo' }, { status: 500 })
+    }
+
+    const data = await groqResponse.json()
+    const testo = data.choices?.[0]?.message?.content || trascrizioneGrezza
+
+    return NextResponse.json({ testo, videoId, titolo: titoloVideo })
   } catch (error) {
     return NextResponse.json({ error: 'Errore del server' }, { status: 500 })
   }
