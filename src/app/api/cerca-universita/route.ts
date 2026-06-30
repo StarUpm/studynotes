@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       : `Elenca 6 università reali italiane o internazionali che corrispondono a "${query}". Rispondi SOLO con un array JSON di stringhe. Esempio: ["Università di Bologna","Politecnico di Milano"]`
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
