@@ -1,162 +1,133 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { materie } from '@/lib/dati-universita'
+import Layout from '@/app/components/Layout'
 
 export default function DiventaTutor() {
-  const [nome, setNome] = useState('')
-  const [materiaInput, setMateriaInput] = useState('')
+  const [materia, setMateria] = useState('')
   const [tariffa, setTariffa] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [bio, setBio] = useState('')
+  const [isTutor, setIsTutor] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [salvando, setSalvando] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [suggerimenti, setSuggerimenti] = useState<string[]>([])
+  const [suggerimentiMateria, setSuggerimentiMateria] = useState<string[]>([])
+  const timerM = useRef<any>(null)
   const router = useRouter()
 
   useEffect(() => {
-    async function caricaProfilo() {
+    async function init() {
       const userData = await supabase.auth.getUser()
-      if (userData.data.user) {
-        const result = await supabase.from('profiles').select('*').eq('id', userData.data.user.id).single()
-        if (result.data) {
-          setNome(result.data.nome || '')
-          setMateriaInput(result.data.materie_insegnate || '')
-          setTariffa(result.data.tariffa_oraria ? result.data.tariffa_oraria.toString() : '')
-        }
+      if (!userData.data.user) { router.push('/login'); return }
+      const profilo = await supabase.from('profiles').select('is_tutor, materie_insegnate, tariffa_oraria, bio').eq('id', userData.data.user.id).single()
+      if (profilo.data) {
+        setIsTutor(profilo.data.is_tutor || false)
+        setMateria(profilo.data.materie_insegnate || '')
+        setTariffa(profilo.data.tariffa_oraria?.toString() || '')
+        setBio(profilo.data.bio || '')
       }
-    }
-    caricaProfilo()
-  }, [])
-
-  function updateMateria(e: React.ChangeEvent<HTMLInputElement>) {
-    const valore = e.target.value
-    setMateriaInput(valore)
-    if (valore.length > 0) {
-      const filtrati = materie.filter(function (m) {
-        return m.toLowerCase().includes(valore.toLowerCase())
-      })
-      setSuggerimenti(filtrati.slice(0, 6))
-    } else {
-      setSuggerimenti([])
-    }
-  }
-
-  function selezionaMateria(valore: string) {
-    setMateriaInput(valore)
-    setSuggerimenti([])
-  }
-
-  async function salvaProfiloTutor() {
-    if (!nome) {
-      setError('Inserisci il tuo nome')
-      return
-    }
-    setLoading(true)
-    setError('')
-
-    const userData = await supabase.auth.getUser()
-    if (!userData.data.user) {
-      setError('Devi accedere prima')
       setLoading(false)
-      return
     }
+    init()
+  }, [router])
 
-    const result = await supabase.from('profiles').update({
-      nome: nome,
-      is_tutor: true,
-      materie_insegnate: materiaInput,
-      tariffa_oraria: parseFloat(tariffa) || 0
-    }).eq('id', userData.data.user.id)
-
-    if (result.error) {
-      setError('Errore nel salvataggio: ' + result.error.message)
-    } else {
-      setSuccess(true)
-      setTimeout(() => router.push('/dashboard'), 1500)
-    }
-    setLoading(false)
+  async function cercaMateria(v: string) {
+    setMateria(v)
+    if (v.length < 2) { setSuggerimentiMateria([]); return }
+    if (timerM.current) clearTimeout(timerM.current)
+    timerM.current = setTimeout(async () => {
+      const res = await fetch('/api/cerca-universita', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: v, tipo: 'materia' }) })
+      const data = await res.json()
+      setSuggerimentiMateria(data.risultati || [])
+    }, 400)
   }
 
-  function updateNome(e: React.ChangeEvent<HTMLInputElement>) {
-    setNome(e.target.value)
+  async function salva() {
+    setSalvando(true)
+    const userData = await supabase.auth.getUser()
+    if (!userData.data.user) return
+    await supabase.from('profiles').update({ is_tutor: true, materie_insegnate: materia, tariffa_oraria: parseFloat(tariffa) || 0, bio }).eq('id', userData.data.user.id)
+    setIsTutor(true)
+    setSuccess(true)
+    setTimeout(() => router.push('/profilo-utente'), 2000)
+    setSalvando(false)
   }
 
-  function updateTariffa(e: React.ChangeEvent<HTMLInputElement>) {
-    setTariffa(e.target.value)
-  }
+  const inputStyle = { width: '100%', border: '0.5px solid #E4E4E7', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', background: 'white' } as React.CSSProperties
 
-  function goToDashboard() {
-    router.push('/dashboard')
-  }
+  if (loading) return <Layout><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}><p style={{ color: '#A1A1AA', fontSize: 13 }}>Caricamento...</p></div></Layout>
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex justify-between items-center">
-        <span className="text-xl font-bold text-blue-600">StudyNotes</span>
-        <button onClick={goToDashboard} className="text-sm text-gray-500 hover:text-blue-600">
-          Torna alla dashboard
-        </button>
-      </nav>
-      <div className="max-w-xl mx-auto px-8 py-10">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Diventa tutor</h1>
-          <p className="text-gray-500 mb-6">Offri ripetizioni online e guadagna</p>
+    <Layout>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 500, color: '#18181B', margin: '0 0 6px', letterSpacing: -0.5 }}>
+          {isTutor ? 'Modifica profilo tutor' : 'Diventa tutor'}
+        </h1>
+        <p style={{ fontSize: 13, color: '#71717A', margin: '0 0 32px' }}>
+          {isTutor ? 'Aggiorna le tue informazioni' : 'Offri ripetizioni online e guadagna aiutando altri studenti'}
+        </p>
 
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-          {success && <p className="text-green-500 text-sm mb-4">Profilo tutor attivato!</p>}
+        {success && (
+          <div style={{ background: '#F0FDF4', border: '0.5px solid #BBF7D0', borderRadius: 8, padding: '10px 14px', marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: '#15803D', margin: 0 }}>Profilo tutor attivato! Reindirizzamento...</p>
+          </div>
+        )}
 
-          <input
-            type="text"
-            placeholder="Il tuo nome utente"
-            value={nome}
-            onChange={updateNome}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:border-blue-500"
-          />
+        {!isTutor && (
+          <div style={{ background: '#18181B', borderRadius: 14, padding: 24, marginBottom: 28 }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: 'white', margin: '0 0 14px' }}>Come funziona</p>
+            <div style={{ borderTop: '0.5px solid #3F3F46' }}>
+              {[
+                { icon: 'ti-user', label: 'Crea il tuo profilo tutor', desc: 'Scegli la materia e la tariffa oraria' },
+                { icon: 'ti-calendar', label: 'Imposta la disponibilità', desc: 'Indica quando sei disponibile' },
+                { icon: 'ti-video', label: 'Tieni le sessioni online', desc: 'Videochiamate integrate nella piattaforma' },
+                { icon: 'ti-coin', label: 'Guadagna l\'80%', desc: 'Klass trattiene solo il 20% di commissione' },
+              ].map(function(item) {
+                return (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #3F3F46' }}>
+                    <i className={`ti ${item.icon}`} style={{ fontSize: 16, color: '#D85A30', flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 13, color: 'white', margin: '0 0 1px' }}>{item.label}</p>
+                      <p style={{ fontSize: 11, color: '#71717A', margin: 0 }}>{item.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
-          <div className="relative mb-3">
-            <input
-              type="text"
-              placeholder="Materia che insegni (es. Matematica)"
-              value={materiaInput}
-              onChange={updateMateria}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
-            />
-            {suggerimenti.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg">
-                {suggerimenti.map(function (s, i) {
-                  return (
-                    <button
-                      key={i}
-                      onClick={function () { selezionaMateria(s) }}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 block"
-                    >
-                      {s}
-                    </button>
-                  )
-                })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ position: 'relative' }}>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>Materia che insegni</label>
+            <input type="text" placeholder="Es. Analisi Matematica" value={materia} onChange={e => cercaMateria(e.target.value)} style={inputStyle} />
+            {suggerimentiMateria.length > 0 && (
+              <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 8, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                {suggerimentiMateria.map(s => (
+                  <button key={s} onClick={() => { setMateria(s); setSuggerimentiMateria([]) }} style={{ width: '100%', textAlign: 'left', padding: '9px 12px', fontSize: 12, background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', cursor: 'pointer', color: '#18181B' }}>{s}</button>
+                ))}
               </div>
             )}
           </div>
 
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Tariffa oraria in euro (es. 15.50)"
-            value={tariffa}
-            onChange={updateTariffa}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:border-blue-500"
-          />
-          <button
-            onClick={salvaProfiloTutor}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Salvataggio...' : 'Attiva profilo tutor'}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>Tariffa oraria (€)</label>
+            <input type="number" step="0.50" placeholder="Es. 15.00" value={tariffa} onChange={e => setTariffa(e.target.value)} style={inputStyle} />
+            <p style={{ fontSize: 11, color: '#A1A1AA', margin: '4px 0 0' }}>Guadagnerai l&apos;80% — Klass trattiene il 20%</p>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>Descrizione (opzionale)</label>
+            <textarea placeholder="Descriviti brevemente — studi, esperienze, approccio didattico..." value={bio} onChange={e => setBio(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+
+          <button onClick={salva} disabled={salvando || !materia || !tariffa} style={{ background: '#18181B', color: 'white', border: 'none', padding: '12px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (salvando || !materia || !tariffa) ? 0.6 : 1 }}>
+            {salvando ? 'Salvataggio...' : isTutor ? 'Salva modifiche' : 'Attiva profilo tutor'}
           </button>
         </div>
       </div>
-    </main>
+    </Layout>
   )
 }
