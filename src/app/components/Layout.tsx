@@ -274,14 +274,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
 
           <Link href="/profilo-utente" style={{ textDecoration: 'none' }}>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '0.5px solid #E4E4E7' }} />
-            ) : (
-              <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F4B860', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: '#412402' }}>
-                {iniziale}
-              </div>
-            )}
-          </Link>
+  {avatarUrl ? (
+    <img src={avatarUrl} alt="Avatar" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '0.5px solid #E4E4E7' }} />
+  ) : nomeUtente ? (
+    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F4B860', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: '#412402' }}>
+      {iniziale}
+    </div>
+  ) : (
+    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F4F4F5', border: '0.5px solid #E4E4E7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <i className="ti ti-user" style={{ fontSize: 16, color: '#A1A1AA' }} />
+    </div>
+  )}
+</Link>
 
           <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className="ti ti-menu-2" style={{ fontSize: 20, color: '#71717A' }} />
