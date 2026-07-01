@@ -88,7 +88,7 @@ export default function Studia() {
               { icon: 'ti-microphone', label: 'Trascrivi lezione', desc: 'Converti audio in testo', href: '/trascrivi' },
             ].map(function(item) {
               return (
-                <button key={item.href} onClick={() => router.push(item.href)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '0.5px solid #F4F4F5', background: 'none', border: 'none', borderBottom: '0.5px solid #F4F4F5', width: '100%', cursor: 'pointer' }}>
+                <button key={item.href} onClick={() => router.push(item.href)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', background: 'none', width: '100%', cursor: 'pointer' }}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <i className={`ti ${item.icon}`} style={{ fontSize: 18, color: '#D85A30' }} />
                     <div style={{ textAlign: 'left' }}>
