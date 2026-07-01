@@ -143,7 +143,7 @@ export default function Trascrivi() {
                 {trascrizioni.map(function(t) {
                   const attiva = trascrizioneAttiva?.id === t.id
                   return (
-                    <button key={t.id} onClick={() => setTrscrizioneAttiva(t)} style={{ width: '100%', textAlign: 'left', padding: '12px 0', borderBottom: '0.5px solid #F4F4F5', background: 'none', border: 'none', borderBottom: '0.5px solid #F4F4F5', cursor: 'pointer' }}>
+                    <button key={t.id} onClick={() => setTrscrizioneAttiva(t)} style={{ width: '100%', textAlign: 'left', padding: '12px 0', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', background: 'none', cursor: 'pointer' }}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                           <p style={{ fontSize: 13, fontWeight: attiva ? 500 : 400, color: attiva ? '#D85A30' : '#18181B', margin: '0 0 2px' }}>{t.titolo}</p>
