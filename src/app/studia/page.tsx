@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import Layout from '@/app/components/Layout'
 
 export default function Studia() {
@@ -37,6 +36,11 @@ export default function Studia() {
     { id: 'schema', icon: 'ti-sitemap', label: 'Schema', desc: 'Mappa gerarchica dei concetti principali del testo', color: '#7FB3E8', textColor: '#042C53' },
   ]
 
+  const altriStrumenti = [
+    { icon: 'ti-bolt', label: 'Importa contenuti', desc: 'YouTube, foto, riassunti AI', href: '/importa' },
+    { icon: 'ti-microphone', label: 'Trascrivi lezione', desc: 'Converti audio in testo', href: '/trascrivi' },
+  ]
+
   return (
     <Layout>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 32px' }}>
@@ -46,7 +50,7 @@ export default function Studia() {
         <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 24, marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 8 }}>Testo degli appunti</label>
           <textarea
-            placeholder="Incolla qui il testo dei tuoi appunti, una dispensa o il contenuto di un capitolo..."
+            placeholder="Incolla qui il testo dei tuoi appunti..."
             value={testo}
             onChange={e => setTesto(e.target.value)}
             rows={8}
@@ -70,7 +74,7 @@ export default function Studia() {
                 key={s.id}
                 onClick={() => avvia(s.id)}
                 disabled={disabilitato}
-                style={{ background: disabilitato ? '#FAFAFA' : s.color, border: disabilitato ? '0.5px solid #F4F4F5' : 'none', borderRadius: 14, padding: '22px', textAlign: 'left', cursor: disabilitato ? 'default' : 'pointer', opacity: disabilitato ? 0.5 : 1 }}
+                style={{ background: disabilitato ? '#FAFAFA' : s.color, borderTop: disabilitato ? '0.5px solid #F4F4F5' : 'none', borderLeft: disabilitato ? '0.5px solid #F4F4F5' : 'none', borderRight: disabilitato ? '0.5px solid #F4F4F5' : 'none', borderBottom: disabilitato ? '0.5px solid #F4F4F5' : 'none', borderRadius: 14, padding: '22px', textAlign: 'left', cursor: disabilitato ? 'default' : 'pointer', opacity: disabilitato ? 0.5 : 1 }}
               >
                 <i className={`ti ${s.icon}`} style={{ fontSize: 22, color: disabilitato ? '#D4D4D8' : s.textColor }} />
                 <p style={{ fontSize: 14, fontWeight: 500, color: disabilitato ? '#A1A1AA' : '#18181B', margin: '14px 0 4px' }}>{s.label}</p>
@@ -80,15 +84,16 @@ export default function Studia() {
           })}
         </div>
 
-        <div style={{ marginTop: 32, borderTop: '0.5px solid #F4F4F5', paddingTop: 24 }}>
+        <div style={{ marginTop: 32, paddingTop: 24, borderTop: '0.5px solid #F4F4F5' }}>
           <p style={{ fontSize: 11, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: 0.5, margin: '0 0 14px' }}>Altri strumenti</p>
-          <div style={{ borderTop: '0.5px solid #F4F4F5' }}>
-            {[
-              { icon: 'ti-bolt', label: 'Importa contenuti', desc: 'YouTube, foto, riassunti AI', href: '/importa' },
-              { icon: 'ti-microphone', label: 'Trascrivi lezione', desc: 'Converti audio in testo', href: '/trascrivi' },
-            ].map(function(item) {
+          <div>
+            {altriStrumenti.map(function(item) {
               return (
-                <button key={item.href} onClick={() => router.push(item.href)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', background: 'none', width: '100%', cursor: 'pointer' }}
+                <button
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', background: 'none', width: '100%', cursor: 'pointer' }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <i className={`ti ${item.icon}`} style={{ fontSize: 18, color: '#D85A30' }} />
                     <div style={{ textAlign: 'left' }}>
