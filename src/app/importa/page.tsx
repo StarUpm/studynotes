@@ -11,7 +11,6 @@ export default function Importa() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [risultato, setRisultato] = useState('')
-
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [testoRiassunto, setTestoRiassunto] = useState('')
@@ -28,76 +27,42 @@ export default function Importa() {
 
   async function importaYoutube() {
     if (!youtubeUrl) { setError('Inserisci un URL YouTube'); return }
-    setLoading(true)
-    setError('')
-    setRisultato('')
+    setLoading(true); setError(''); setRisultato('')
     try {
-      const res = await fetch('/api/youtube', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: youtubeUrl })
-      })
+      const res = await fetch('/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: youtubeUrl }) })
       const data = await res.json()
-      if (data.testo) {
-        setRisultato(data.testo)
-      } else {
-        setError(data.error || 'Errore nel processare il video')
-      }
-    } catch (e) {
-      setError('Errore di connessione')
-    }
+      if (data.testo) { setRisultato(data.testo) }
+      else { setError(data.error || 'Errore nel processare il video') }
+    } catch (e) { setError('Errore di connessione') }
     setLoading(false)
   }
 
   async function importaFoto() {
     if (!fotoFile) { setError('Seleziona una foto'); return }
-    setLoading(true)
-    setError('')
-    setRisultato('')
+    setLoading(true); setError(''); setRisultato('')
     try {
       const reader = new FileReader()
       reader.onload = async function(e) {
         const base64 = (e.target?.result as string)?.split(',')[1]
-        const res = await fetch('/api/scansiona-foto', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ immagine: base64, mimeType: fotoFile.type })
-        })
+        const res = await fetch('/api/scansiona-foto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ immagine: base64, mimeType: fotoFile.type }) })
         const data = await res.json()
-        if (data.testo) {
-          setRisultato(data.testo)
-        } else {
-          setError(data.error || 'Errore nella scansione')
-        }
+        if (data.testo) { setRisultato(data.testo) }
+        else { setError(data.error || 'Errore nella scansione') }
         setLoading(false)
       }
       reader.readAsDataURL(fotoFile)
-    } catch (e) {
-      setError('Errore di connessione')
-      setLoading(false)
-    }
+    } catch (e) { setError('Errore di connessione'); setLoading(false) }
   }
 
   async function generaRiassunto() {
     if (testoRiassunto.length < 50) { setError('Inserisci almeno 50 caratteri'); return }
-    setLoading(true)
-    setError('')
-    setRisultato('')
+    setLoading(true); setError(''); setRisultato('')
     try {
-      const res = await fetch('/api/generate-riassunto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testo: testoRiassunto })
-      })
+      const res = await fetch('/api/generate-riassunto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testo: testoRiassunto }) })
       const data = await res.json()
-      if (data.riassunto) {
-        setRisultato(data.riassunto)
-      } else {
-        setError(data.error || 'Errore nella generazione')
-      }
-    } catch (e) {
-      setError('Errore di connessione')
-    }
+      if (data.riassunto) { setRisultato(data.riassunto) }
+      else { setError(data.error || 'Errore nella generazione') }
+    } catch (e) { setError('Errore di connessione') }
     setLoading(false)
   }
 
@@ -106,162 +71,101 @@ export default function Importa() {
     router.push('/studia')
   }
 
-  function copia() {
-    navigator.clipboard.writeText(risultato)
-    alert('Testo copiato!')
-  }
-
   const tabs = [
-    { id: 'youtube', label: '▶️ Da YouTube', desc: 'Importa e trascrivi video YouTube' },
-    { id: 'foto', label: '📷 Scansiona foto', desc: 'Fotografa appunti scritti a mano' },
-    { id: 'riassunto', label: '📝 Riassunto AI', desc: 'Genera riassunto da testo o PDF' },
+    { id: 'youtube', icon: 'ti-brand-youtube', label: 'Da YouTube' },
+    { id: 'foto', icon: 'ti-camera', label: 'Scansiona foto' },
+    { id: 'riassunto', icon: 'ti-file-text', label: 'Riassunto AI' },
   ]
+
+  const inputStyle = { width: '100%', border: '0.5px solid #E4E4E7', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', background: 'white' } as React.CSSProperties
 
   return (
     <Layout>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 32px' }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 6 }}>⚡ Importa contenuti</h1>
-        <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 32 }}>Trasforma qualsiasi contenuto in materiale di studio con l&apos;AI</p>
+        <h1 style={{ fontSize: 24, fontWeight: 500, color: '#18181B', margin: '0 0 6px', letterSpacing: -0.5 }}>Importa contenuti</h1>
+        <p style={{ fontSize: 13, color: '#71717A', margin: '0 0 28px' }}>Trasforma qualsiasi contenuto in materiale di studio</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 28 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24, borderBottom: '0.5px solid #F4F4F5', paddingBottom: 0 }}>
           {tabs.map(function(t) {
             return (
-              <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setRisultato(''); setError('') }}
-                style={{ padding: '16px 20px', borderRadius: 12, fontSize: 14, cursor: 'pointer', border: tab === t.id ? 'none' : '0.5px solid #e5e7eb', background: tab === t.id ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : 'white', color: tab === t.id ? 'white' : '#374151', textAlign: 'left', fontWeight: tab === t.id ? 600 : 400 }}
-              >
-                <div style={{ fontSize: 20, marginBottom: 6 }}>{t.label.split(' ')[0]}</div>
-                <div style={{ fontSize: 13, fontWeight: tab === t.id ? 600 : 500, marginBottom: 4 }}>{t.label.split(' ').slice(1).join(' ')}</div>
-                <div style={{ fontSize: 11, opacity: 0.8 }}>{t.desc}</div>
+              <button key={t.id} onClick={() => { setTab(t.id); setRisultato(''); setError('') }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, cursor: 'pointer', border: 'none', background: 'transparent', color: tab === t.id ? '#18181B' : '#A1A1AA', fontWeight: tab === t.id ? 500 : 400, borderBottom: tab === t.id ? '2px solid #18181B' : '2px solid transparent' }}>
+                <i className={`ti ${t.icon}`} style={{ fontSize: 15 }} />
+                {t.label}
               </button>
             )
           })}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: risultato ? '1fr 1fr' : '1fr', gap: 20 }}>
-          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 28 }}>
-
-            {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 16, background: '#FEF2F2', padding: '10px 14px', borderRadius: 8 }}>{error}</p>}
+          <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 24 }}>
+            {error && <div style={{ background: '#FFF8F6', border: '0.5px solid #FECACA', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}><p style={{ fontSize: 12, color: '#D85A30', margin: 0 }}>{error}</p></div>}
 
             {tab === 'youtube' && (
               <>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Importa da YouTube</h2>
-                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>Incolla il link di un video YouTube — l&apos;AI lo trascriverà e riassumerà</p>
-
-                <div style={{ background: '#FFFBEB', border: '0.5px solid #FDE68A', borderRadius: 10, padding: '12px 14px', marginBottom: 20 }}>
-                  <p style={{ fontSize: 12, color: '#B45309' }}>⚠️ Funziona meglio con video che hanno i sottotitoli abilitati. Lezioni universitarie, TED Talks, tutorial — ideali!</p>
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 6px' }}>Importa da YouTube</h2>
+                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px', lineHeight: 1.5 }}>Incolla il link di un video YouTube con i sottotitoli attivati</p>
+                <div style={{ background: '#FFFBEB', border: '0.5px solid #FDE68A', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                  <p style={{ fontSize: 12, color: '#B45309', margin: 0 }}>Funziona con video che hanno i sottotitoli abilitati (CC)</p>
                 </div>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>URL del video</p>
-                <input
-                  type="text"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  value={youtubeUrl}
-                  onChange={e => setYoutubeUrl(e.target.value)}
-                  style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 14, outline: 'none', marginBottom: 20, background: 'white' }}
-                />
-
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-                  {['https://youtu.be/dQw4w9WgXcQ', 'https://www.youtube.com/watch?v=...'].map(function(ex, i) {
-                    return (
-                      <span key={i} style={{ fontSize: 11, background: '#f9fafb', border: '0.5px solid #e5e7eb', padding: '4px 10px', borderRadius: 20, color: '#6B7280' }}>
-                        {i === 0 ? '✓ youtu.be/...' : '✓ youtube.com/watch?v=...'}
-                      </span>
-                    )
-                  })}
-                </div>
-
-                <button onClick={importaYoutube} disabled={loading || !youtubeUrl} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: (loading || !youtubeUrl) ? 0.7 : 1 }}>
-                  {loading ? '⏳ Elaborazione video...' : '▶️ Importa da YouTube'}
+                <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>URL del video</label>
+                <input type="text" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && importaYoutube()} style={{ ...inputStyle, marginBottom: 16 }} />
+                <button onClick={importaYoutube} disabled={loading || !youtubeUrl} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (loading || !youtubeUrl) ? 0.6 : 1 }}>
+                  {loading ? 'Elaborazione...' : 'Importa da YouTube'}
                 </button>
               </>
             )}
 
             {tab === 'foto' && (
               <>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Scansiona appunti scritti a mano</h2>
-                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>Carica una foto dei tuoi appunti — l&apos;AI li leggerà e digitalizzerà automaticamente</p>
-
-                <div style={{ background: '#EFF6FF', border: '0.5px solid #BFDBFE', borderRadius: 10, padding: '12px 14px', marginBottom: 20 }}>
-                  <p style={{ fontSize: 12, color: '#185FA5', lineHeight: 1.6 }}>
-                    💡 Suggerimenti per risultati migliori:
-                    <br />• Fotografa in buona luce
-                    <br />• Tieni la foto dritta e ben leggibile
-                    <br />• Un foglio alla volta per migliore precisione
-                  </p>
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 6px' }}>Scansiona appunti scritti a mano</h2>
+                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px', lineHeight: 1.5 }}>Carica una foto dei tuoi appunti — l&apos;AI li digitalizza automaticamente</p>
+                <div style={{ background: '#EFF6FF', border: '0.5px solid #BFDBFE', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                  <p style={{ fontSize: 12, color: '#185FA5', margin: 0, lineHeight: 1.5 }}>Fotografia in buona luce · Un foglio alla volta per risultati migliori</p>
                 </div>
-
-                <div style={{ border: '1px dashed #e5e7eb', borderRadius: 12, padding: 28, background: '#f9fafb', textAlign: 'center', marginBottom: 20 }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                  <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>Carica una foto degli appunti</p>
-                  <p style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 14 }}>JPG, PNG, HEIC — max 10MB</p>
-                  <input type="file" accept="image/*" onChange={e => setFotoFile(e.target.files?.[0] || null)} style={{ fontSize: 13 }} />
-                  {fotoFile && <p style={{ fontSize: 12, color: '#059669', marginTop: 8 }}>✓ {fotoFile.name}</p>}
+                <div style={{ border: '0.5px dashed #E4E4E7', borderRadius: 10, padding: '24px', textAlign: 'center', background: '#FAFAFA', marginBottom: 16 }}>
+                  <i className="ti ti-camera" style={{ fontSize: 28, color: '#D4D4D8', display: 'block', marginBottom: 8 }} />
+                  <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 10px' }}>JPG, PNG, HEIC · max 10MB</p>
+                  <input type="file" accept="image/*" onChange={e => setFotoFile(e.target.files?.[0] || null)} style={{ fontSize: 12 }} />
+                  {fotoFile && <p style={{ fontSize: 12, color: '#15803D', marginTop: 8 }}>✓ {fotoFile.name}</p>}
                 </div>
-
-                <button onClick={importaFoto} disabled={loading || !fotoFile} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: (loading || !fotoFile) ? 0.7 : 1 }}>
-                  {loading ? '⏳ Scansione in corso...' : '📷 Scansiona appunti'}
+                <button onClick={importaFoto} disabled={loading || !fotoFile} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (loading || !fotoFile) ? 0.6 : 1 }}>
+                  {loading ? 'Scansione in corso...' : 'Scansiona appunti'}
                 </button>
               </>
             )}
 
             {tab === 'riassunto' && (
               <>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Genera riassunto AI</h2>
-                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>Incolla un testo lungo — l&apos;AI lo riassumerà in modo strutturato con i punti chiave</p>
-
-                <textarea
-                  placeholder="Incolla qui il testo che vuoi riassumere — capitoli di libri, dispense, appunti..."
-                  value={testoRiassunto}
-                  onChange={e => setTestoRiassunto(e.target.value)}
-                  rows={10}
-                  style={{ width: '100%', border: '0.5px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', fontSize: 13, outline: 'none', resize: 'vertical', marginBottom: 16, lineHeight: 1.6 }}
-                />
-
-                <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 16 }}>
-                  {testoRiassunto.length} caratteri · il riassunto sarà circa {Math.round(testoRiassunto.length / 4)} caratteri
-                </p>
-
-                <button onClick={generaRiassunto} disabled={loading || testoRiassunto.length < 50} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: (loading || testoRiassunto.length < 50) ? 0.7 : 1 }}>
-                  {loading ? '⏳ Generazione riassunto...' : '📝 Genera riassunto'}
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 6px' }}>Genera riassunto AI</h2>
+                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px', lineHeight: 1.5 }}>Incolla un testo lungo — l&apos;AI lo riassume con i punti chiave</p>
+                <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>Testo da riassumere</label>
+                <textarea placeholder="Incolla qui il testo..." value={testoRiassunto} onChange={e => setTestoRiassunto(e.target.value)} rows={10} style={{ ...inputStyle, resize: 'vertical', marginBottom: 8, lineHeight: 1.6 }} />
+                <p style={{ fontSize: 11, color: '#A1A1AA', margin: '0 0 16px' }}>{testoRiassunto.length} caratteri</p>
+                <button onClick={generaRiassunto} disabled={loading || testoRiassunto.length < 50} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (loading || testoRiassunto.length < 50) ? 0.6 : 1 }}>
+                  {loading ? 'Generazione...' : 'Genera riassunto'}
                 </button>
               </>
             )}
           </div>
 
           {risultato && (
-            <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 28 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>
-                  {tab === 'youtube' ? '▶️ Contenuto estratto' : tab === 'foto' ? '📷 Testo scansionato' : '📝 Riassunto generato'}
-                </h3>
-                <span style={{ fontSize: 11, color: '#9CA3AF' }}>{risultato.length} caratteri</span>
+            <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: 0 }}>Risultato</h3>
+                <span style={{ fontSize: 11, color: '#A1A1AA' }}>{risultato.length} caratteri</span>
               </div>
-
-              <div style={{ background: '#f9fafb', borderRadius: 10, padding: 16, maxHeight: 400, overflowY: 'auto', marginBottom: 16 }}>
-                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{risultato}</p>
+              <div style={{ background: '#FAFAFA', borderRadius: 8, padding: 14, maxHeight: 380, overflowY: 'auto', marginBottom: 14 }}>
+                <p style={{ fontSize: 12, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0 }}>{risultato}</p>
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <button onClick={usaPerStudiare} style={{ width: '100%', background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  🤖 Usa per studiare con AI
+                <button onClick={usaPerStudiare} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  Usa per studiare con AI
                 </button>
-                <button onClick={copia} style={{ width: '100%', background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: '11px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
-                  📋 Copia testo
+                <button onClick={() => navigator.clipboard.writeText(risultato)} style={{ width: '100%', background: 'white', color: '#18181B', border: '0.5px solid #E4E4E7', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  Copia testo
                 </button>
-                <button
-                  onClick={() => {
-                    const blob = new Blob([risultato], { type: 'text/plain' })
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = 'klass_contenuto.txt'
-                    a.click()
-                  }}
-                  style={{ width: '100%', background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: '11px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-                >
-                  ⬇️ Scarica come file
+                <button onClick={() => { const blob = new Blob([risultato], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'klass_contenuto.txt'; a.click() }} style={{ width: '100%', background: 'white', color: '#18181B', border: '0.5px solid #E4E4E7', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  Scarica come file
                 </button>
               </div>
             </div>
