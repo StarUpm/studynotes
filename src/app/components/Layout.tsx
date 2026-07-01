@@ -167,7 +167,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }} />
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 280, background: '#18181B', padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-              <span style={{ fontSize: 19px, fontWeight: 500, color: 'white', letterSpacing: -0.5 }}>klass<span style={{ color: '#D85A30' }}>.</span></span>
+              <span style={{ fontSize: 19, fontWeight: 500, color: 'white', letterSpacing: -0.5 }}>klass<span style={{ color: '#D85A30' }}>.</span></span>
               <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                 <i className="ti ti-x" style={{ fontSize: 20, color: '#A1A1AA' }} />
               </button>
