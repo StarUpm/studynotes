@@ -85,10 +85,10 @@ export default function Importa() {
         <h1 style={{ fontSize: 24, fontWeight: 500, color: '#18181B', margin: '0 0 6px', letterSpacing: -0.5 }}>Importa contenuti</h1>
         <p style={{ fontSize: 13, color: '#71717A', margin: '0 0 28px' }}>Trasforma qualsiasi contenuto in materiale di studio</p>
 
-        <div style={{ display: 'flex', gap: 6, marginBottom: 24, borderBottom: '0.5px solid #F4F4F5', paddingBottom: 0 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24, borderBottom: '0.5px solid #F4F4F5' }}>
           {tabs.map(function(t) {
             return (
-              <button key={t.id} onClick={() => { setTab(t.id); setRisultato(''); setError('') }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, cursor: 'pointer', border: 'none', background: 'transparent', color: tab === t.id ? '#18181B' : '#A1A1AA', fontWeight: tab === t.id ? 500 : 400, borderBottom: tab === t.id ? '2px solid #18181B' : '2px solid transparent' }}>
+              <button key={t.id} onClick={() => { setTab(t.id); setRisultato(''); setError('') }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, cursor: 'pointer', background: 'transparent', color: tab === t.id ? '#18181B' : '#A1A1AA', fontWeight: tab === t.id ? 500 : 400, borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: tab === t.id ? '2px solid #18181B' : '2px solid transparent' }}>
                 <i className={`ti ${t.icon}`} style={{ fontSize: 15 }} />
                 {t.label}
               </button>
