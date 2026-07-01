@@ -110,7 +110,9 @@ export default function Trascrivi() {
                 <input type="text" placeholder="Es. Analisi Matematica" value={materia} onChange={e => cercaMateria(e.target.value)} style={inputStyle} />
                 {suggerimentiMateria.length > 0 && (
                   <div style={{ position: 'absolute', zIndex: 10, width: '100%', background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 8, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-                    {suggerimentiMateria.map(s => <button key={s} onClick={() => { setMateria(s); setSuggerimentiMateria([]) }} style={{ width: '100%', textAlign: 'left', padding: '9px 12px', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#18181B', borderBottom: '0.5px solid #F4F4F5' }}>{s}</button>)}
+                    {suggerimentiMateria.map(s => (
+                      <button key={s} onClick={() => { setMateria(s); setSuggerimentiMateria([]) }} style={{ width: '100%', textAlign: 'left', padding: '9px 12px', fontSize: 12, background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', cursor: 'pointer', color: '#18181B' }}>{s}</button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -143,7 +145,7 @@ export default function Trascrivi() {
                 {trascrizioni.map(function(t) {
                   const attiva = trascrizioneAttiva?.id === t.id
                   return (
-                    <button key={t.id} onClick={() => setTrscrizioneAttiva(t)} style={{ width: '100%', textAlign: 'left', padding: '12px 0', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', background: 'none', cursor: 'pointer' }}
+                    <button key={t.id} onClick={() => setTrscrizioneAttiva(t)} style={{ width: '100%', textAlign: 'left', padding: '12px 0', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '0.5px solid #F4F4F5', background: 'none', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                           <p style={{ fontSize: 13, fontWeight: attiva ? 500 : 400, color: attiva ? '#D85A30' : '#18181B', margin: '0 0 2px' }}>{t.titolo}</p>
