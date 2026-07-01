@@ -55,7 +55,7 @@ export default function ProfiloUtente() {
     if (acquistiResult.data) setAcquisti(acquistiResult.data)
     if (sessioniSResult.data) setSessioniStudente(sessioniSResult.data)
     if (sessioniTResult.data) setSessioniTutor(sessioniTResult.data)
-    if (notesResult.data?.length > 0) {
+    if (notesResult.data && notesResult.data.length > 0) {
       const noteIds = notesResult.data.map(n => n.id)
       const purchasesResult = await supabase.from('purchases').select('prezzo').in('note_id', noteIds)
       if (purchasesResult.data) setGuadagniAppunti(purchasesResult.data.reduce((acc, p) => acc + (p.prezzo || 0), 0) * 0.8)
