@@ -18,11 +18,13 @@ type Notifica = {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [emailFooter, setEmailFooter] = useState('')
   const [notifiche, setNotifiche] = useState<Notifica[]>([])
   const [notificheOpen, setNotificheOpen] = useState(false)
   const [userId, setUserId] = useState('')
   const [premiumAttivo, setPremiumAttivo] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [nomeUtente, setNomeUtente] = useState('')
+  const [email, setEmail] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -33,8 +35,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       setUserId(uid)
       await caricaNotifiche(uid)
 
-      const profilo = await supabase.from('profiles').select('premium_attivo').eq('id', uid).single()
-      if (profilo.data?.premium_attivo) setPremiumAttivo(true)
+      const profilo = await supabase.from('profiles').select('premium_attivo, avatar_url, nome').eq('id', uid).single()
+      if (profilo.data) {
+        setPremiumAttivo(profilo.data.premium_attivo || false)
+        setAvatarUrl(profilo.data.avatar_url || '')
+        setNomeUtente(profilo.data.nome || '')
+      }
 
       const channel = supabase
         .channel('notifiche_' + uid)
@@ -43,9 +49,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           schema: 'public',
           table: 'notifiche',
           filter: 'utente_id=eq.' + uid
-        }, function() {
-          caricaNotifiche(uid)
-        })
+        }, function() { caricaNotifiche(uid) })
         .subscribe()
 
       return function() { supabase.removeChannel(channel) }
@@ -65,12 +69,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   async function segnaLetta(id: string) {
     await supabase.from('notifiche').update({ letta: true }).eq('id', id)
-    setNotifiche(function(prev) { return prev.map(function(n) { return n.id === id ? { ...n, letta: true } : n }) })
+    setNotifiche(prev => prev.map(n => n.id === id ? { ...n, letta: true } : n))
   }
 
   async function segnaAllLette() {
     await supabase.from('notifiche').update({ letta: true }).eq('utente_id', userId).eq('letta', false)
-    setNotifiche(function(prev) { return prev.map(function(n) { return { ...n, letta: true } }) })
+    setNotifiche(prev => prev.map(n => ({ ...n, letta: true })))
   }
 
   function handleLogout() {
@@ -80,12 +84,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   function iconaNotifica(tipo: string) {
-    if (tipo === 'messaggio') return '💬'
-    if (tipo === 'prenotazione') return '📅'
-    if (tipo === 'acquisto') return '💰'
-    if (tipo === 'recensione') return '⭐'
-    if (tipo === 'sessione') return '🎥'
-    return '🔔'
+    if (tipo === 'messaggio') return 'ti-message-circle'
+    if (tipo === 'prenotazione') return 'ti-calendar'
+    if (tipo === 'acquisto') return 'ti-coin'
+    if (tipo === 'recensione') return 'ti-star'
+    if (tipo === 'sessione') return 'ti-video'
+    return 'ti-bell'
   }
 
   function tempoFa(d: string) {
@@ -98,69 +102,110 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return Math.floor(ore / 24) + ' giorni fa'
   }
 
-  const nonLette = notifiche.filter(function(n) { return !n.letta }).length
+  const nonLette = notifiche.filter(n => !n.letta).length
+  const iniziale = nomeUtente ? nomeUtente.charAt(0).toUpperCase() : '?'
+
+  const navLinks = [
+    { label: 'Esplora', href: '/esplora' },
+    { label: 'Tutor', href: '/tutor' },
+    { label: 'Studia AI', href: '/studia' },
+    { label: 'Forum', href: '/forum' },
+  ]
+
+  const menuLinks = [
+    { label: 'Esplora appunti', href: '/esplora' },
+    { label: 'Trova un tutor', href: '/tutor' },
+    { label: 'Studia con AI', href: '/studia' },
+    { label: 'Importa contenuti', href: '/importa' },
+    { label: 'Trascrivi lezioni', href: '/trascrivi' },
+    { label: 'Messaggi', href: '/chat' },
+    { label: 'Forum Q&A', href: '/forum' },
+    { label: 'I miei punti', href: '/punti' },
+    { label: 'Klass Premium', href: '/premium' },
+    { label: 'Diventa tutor', href: '/diventa-tutor' },
+    { label: 'Le mie sessioni', href: '/sessioni' },
+    { label: 'Il mio profilo', href: '/profilo-utente' },
+  ]
+
+  const footerLinks = [
+    {
+      titolo: 'Piattaforma',
+      links: [
+        { label: 'Esplora appunti', href: '/esplora' },
+        { label: 'Trova un tutor', href: '/tutor' },
+        { label: 'Studia con AI', href: '/studia' },
+        { label: 'Forum Q&A', href: '/forum' },
+        { label: 'Carica appunti', href: '/upload' },
+      ]
+    },
+    {
+      titolo: 'Account',
+      links: [
+        { label: 'Accedi', href: '/login' },
+        { label: 'Registrati', href: '/register' },
+        { label: 'Premium', href: '/premium' },
+        { label: 'Profilo', href: '/profilo-utente' },
+        { label: 'I miei punti', href: '/punti' },
+      ]
+    },
+    {
+      titolo: 'Legale',
+      links: [
+        { label: 'Privacy Policy', href: '/privacy' },
+        { label: 'Termini e condizioni', href: '/termini' },
+        { label: 'Cookie Policy', href: '/privacy' },
+      ]
+    },
+  ]
 
   return (
-    <div style={{ fontFamily: 'var(--font-sans, system-ui)', background: '#f9fafb', minHeight: '100vh', display: 'flex', flexDirection: 'column', cursor: 'default' }}>
+    <div style={{ fontFamily: 'var(--font-geist-sans, system-ui)', background: '#ffffff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
+      {/* MENU MOBILE */}
       {menuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
-          <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,30,0.6)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }} />
-          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 300, padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
-            <button onClick={() => setMenuOpen(false)} style={{ alignSelf: 'flex-end', background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 22, cursor: 'pointer', marginBottom: 32 }}>✕</button>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-              {[
-                ['Esplora appunti', '/esplora'],
-                ['Trova un tutor', '/tutor'],
-                ['Studia con AI', '/studia'],
-                ['Importa contenuti', '/importa'],
-                ['Trascrivi lezioni', '/trascrivi'],
-                ['Messaggi', '/chat'],
-                ['Forum Q&A', '/forum'],
-                ['I miei punti', '/punti'],
-                ['👑 Klass Premium', '/premium'],
-                ['Diventa tutor', '/diventa-tutor'],
-                ['Le mie sessioni', '/sessioni'],
-                ['Il mio profilo', '/profilo-utente'],
-              ].map(function([label, href]) {
+          <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }} />
+          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 280, background: '#18181B', padding: '28px 24px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+              <span style={{ fontSize: 19px, fontWeight: 500, color: 'white', letterSpacing: -0.5 }}>klass<span style={{ color: '#D85A30' }}>.</span></span>
+              <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <i className="ti ti-x" style={{ fontSize: 20, color: '#A1A1AA' }} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+              {menuLinks.map(function(l) {
                 return (
-                  <Link key={label} href={href} onClick={() => setMenuOpen(false)} style={{ color: label.includes('👑') ? '#FFD700' : 'white', fontSize: 16, fontWeight: 500, textDecoration: 'none', padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.1)', display: 'block' }}>
-                    {label}
+                  <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)} style={{ color: '#D4D4D8', fontSize: 14, textDecoration: 'none', padding: '11px 0', borderBottom: '0.5px solid #3F3F46', display: 'block' }}>
+                    {l.label}
                   </Link>
                 )
               })}
-              <button onClick={handleLogout} style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 400, background: 'none', border: 'none', padding: '10px 0', textAlign: 'left', cursor: 'pointer', marginTop: 8 }}>
+              <button onClick={handleLogout} style={{ color: '#71717A', fontSize: 14, background: 'none', border: 'none', padding: '11px 0', textAlign: 'left', cursor: 'pointer', marginTop: 8 }}>
                 Esci
               </button>
             </div>
-            <div style={{ marginTop: 24 }}>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 8 }}>Resta aggiornato</p>
-              <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.4)', paddingBottom: 8 }}>
-                <input type="email" placeholder="La tua email" value={emailFooter} onChange={e => setEmailFooter(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 13, flex: 1, outline: 'none', cursor: 'text' }} />
-                <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer' }}>Iscriviti</button>
-              </div>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 20 }}>© 2026 Klass</p>
-            </div>
+            <p style={{ color: '#3F3F46', fontSize: 11, marginTop: 24 }}>© 2026 klass</p>
           </div>
         </div>
       )}
 
+      {/* PANNELLO NOTIFICHE */}
       {notificheOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setNotificheOpen(false)}>
-          <div style={{ position: 'absolute', top: 64, right: 80, width: 360, background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden' }} onClick={function(e) { e.stopPropagation() }}>
-            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Notifiche</p>
+          <div style={{ position: 'absolute', top: 60, right: 72, width: 340, background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F4F4F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: 0 }}>Notifiche</p>
               {nonLette > 0 && (
-                <button onClick={segnaAllLette} style={{ fontSize: 12, color: '#185FA5', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={segnaAllLette} style={{ fontSize: 12, color: '#D85A30', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Segna tutte come lette
                 </button>
               )}
             </div>
-            <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 380, overflowY: 'auto' }}>
               {notifiche.length === 0 && (
                 <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🔔</div>
-                  <p style={{ fontSize: 13, color: '#9CA3AF' }}>Nessuna notifica ancora</p>
+                  <i className="ti ti-bell" style={{ fontSize: 28, color: '#D4D4D8', display: 'block', marginBottom: 8 }} />
+                  <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>Nessuna notifica ancora</p>
                 </div>
               )}
               {notifiche.map(function(n) {
@@ -172,15 +217,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       setNotificheOpen(false)
                       if (n.link) router.push(n.link)
                     }}
-                    style={{ display: 'flex', gap: 12, padding: '12px 18px', borderBottom: '0.5px solid #f3f4f6', cursor: 'pointer', background: n.letta ? 'white' : '#EFF6FF' }}
+                    style={{ display: 'flex', gap: 12, padding: '12px 18px', borderBottom: '0.5px solid #F4F4F5', cursor: 'pointer', background: n.letta ? 'white' : '#FFF8F6' }}
                   >
-                    <div style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>{iconaNotifica(n.tipo)}</div>
+                    <i className={`ti ${iconaNotifica(n.tipo)}`} style={{ fontSize: 17, color: '#D85A30', marginTop: 1, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: n.letta ? 400 : 600, color: '#111827', marginBottom: 2 }}>{n.titolo}</p>
-                      {n.messaggio && <p style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{n.messaggio}</p>}
-                      <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{tempoFa(n.created_at)}</p>
+                      <p style={{ fontSize: 13, fontWeight: n.letta ? 400 : 500, color: '#18181B', margin: '0 0 2px' }}>{n.titolo}</p>
+                      {n.messaggio && <p style={{ fontSize: 12, color: '#71717A', lineHeight: 1.5, margin: 0 }}>{n.messaggio}</p>}
+                      <p style={{ fontSize: 11, color: '#A1A1AA', margin: '4px 0 0' }}>{tempoFa(n.created_at)}</p>
                     </div>
-                    {!n.letta && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#185FA5', flexShrink: 0, marginTop: 6 }} />}
+                    {!n.letta && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#D85A30', flexShrink: 0, marginTop: 5 }} />}
                   </div>
                 )
               })}
@@ -189,38 +234,57 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', borderBottom: '0.5px solid #e5e7eb', background: 'white', position: 'sticky', top: 0, zIndex: 50 }}>
-        <Link href="/dashboard" style={{ fontSize: 22, fontWeight: 700, background: 'linear-gradient(135deg, #185FA5, #7F77DD)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textDecoration: 'none', letterSpacing: -0.5 }}>Klass</Link>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Link href="/esplora" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Esplora</Link>
-          <Link href="/tutor" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Tutor</Link>
-          <Link href="/studia" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>Studia AI</Link>
-          <Link href="/importa" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>⚡ Importa</Link>
-          <Link href="/trascrivi" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🎙️</Link>
-          <Link href="/chat" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>💬</Link>
-          <Link href="/forum" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🙋</Link>
-          <Link href="/punti" style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>🏆</Link>
+      {/* NAVBAR */}
+      <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 32px', height: 56, borderBottom: '0.5px solid #F4F4F5', background: 'white', position: 'sticky', top: 0, zIndex: 50 }}>
+        <Link href="/dashboard" style={{ fontSize: 20, fontWeight: 500, letterSpacing: -0.6, textDecoration: 'none', color: '#18181B' }}>
+          klass<span style={{ color: '#D85A30' }}>.</span>
+        </Link>
+
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          {navLinks.map(function(l) {
+            return (
+              <Link key={l.href} href={l.href} style={{ fontSize: 13, color: '#71717A', textDecoration: 'none' }}>
+                {l.label}
+              </Link>
+            )
+          })}
+
           {premiumAttivo ? (
-            <Link href="/premium" style={{ fontSize: 13, color: '#B45309', textDecoration: 'none', fontWeight: 600 }}>👑 Premium</Link>
+            <Link href="/premium" style={{ fontSize: 13, color: '#854F0B', textDecoration: 'none', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <i className="ti ti-crown" style={{ fontSize: 14 }} />
+              Premium
+            </Link>
           ) : (
-            <Link href="/premium" style={{ fontSize: 12, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', padding: '6px 12px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>👑 Premium</Link>
+            <Link href="/premium" style={{ fontSize: 13, color: '#18181B', textDecoration: 'none', fontWeight: 500, background: '#F4F4F5', padding: '6px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <i className="ti ti-crown" style={{ fontSize: 14 }} />
+              Premium
+            </Link>
           )}
+
           <button
             onClick={() => setNotificheOpen(!notificheOpen)}
-            style={{ position: 'relative', background: 'none', border: '0.5px solid #d1d5db', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
+            style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8 }}
           >
-            🔔
+            <i className="ti ti-bell" style={{ fontSize: 18, color: '#71717A' }} />
             {nonLette > 0 && (
-              <div style={{ position: 'absolute', top: -4, right: -4, background: '#DC2626', color: 'white', fontSize: 9, fontWeight: 700, width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'absolute', top: 4, right: 4, background: '#D85A30', color: 'white', fontSize: 9, fontWeight: 600, width: 14, height: 14, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {nonLette > 9 ? '9+' : nonLette}
               </div>
             )}
           </button>
-          <Link href="/profilo-utente" style={{ background: 'linear-gradient(135deg, #185FA5, #7F77DD)', color: 'white', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>Profilo</Link>
-          <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: '0.5px solid #d1d5db', width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-            <span style={{ display: 'block', width: 16, height: 1.5, background: '#374151', borderRadius: 2 }} />
-            <span style={{ display: 'block', width: 16, height: 1.5, background: '#374151', borderRadius: 2 }} />
-            <span style={{ display: 'block', width: 16, height: 1.5, background: '#374151', borderRadius: 2 }} />
+
+          <Link href="/profilo-utente" style={{ textDecoration: 'none' }}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '0.5px solid #E4E4E7' }} />
+            ) : (
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F4B860', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: '#412402' }}>
+                {iniziale}
+              </div>
+            )}
+          </Link>
+
+          <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-menu-2" style={{ fontSize: 20, color: '#71717A' }} />
           </button>
         </div>
       </nav>
@@ -228,39 +292,54 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div style={{ flex: 1 }}>{children}</div>
       <CookieBanner />
 
-      <footer style={{ background: '#042C53', padding: '48px 40px 0', marginTop: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1.6fr', gap: 32, paddingBottom: 40, borderBottom: '0.5px solid rgba(255,255,255,0.12)' }}>
-          {[
-            { title: 'Piattaforma', links: [['Esplora appunti', '/esplora'], ['Trova un tutor', '/tutor'], ['Studia con AI', '/studia'], ['Importa contenuti', '/importa'], ['Forum Q&A', '/forum']] },
-            { title: 'Account', links: [['Registrati', '/register'], ['Accedi', '/login'], ['Il mio profilo', '/profilo-utente'], ['Le mie sessioni', '/sessioni'], ['I miei punti', '/punti']] },
-            { title: 'Premium', links: [['👑 Klass Premium', '/premium'], ['Piano Mensile', '/premium'], ['Piano Trimestrale', '/premium'], ['Piano Annuale', '/premium']] },
-            { title: 'Link utili', links: [['Privacy Policy', '/privacy'], ['Termini e condizioni', '/termini'], ['Cookie Policy', '/privacy'], ['FAQ', '#'], ['Contattaci', '#']] },
-          ].map(function(col) {
+      {/* FOOTER */}
+      <footer style={{ background: '#18181B', padding: '44px 36px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 28, marginBottom: 32 }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 500, color: 'white', letterSpacing: -0.6 }}>
+              klass<span style={{ color: '#D85A30' }}>.</span>
+            </span>
+            <p style={{ fontSize: 12, color: '#A1A1AA', marginTop: 10, lineHeight: 1.7, maxWidth: 200 }}>
+              La piattaforma italiana per studiare, condividere e crescere insieme.
+            </p>
+          </div>
+          {footerLinks.map(function(col) {
             return (
-              <div key={col.title}>
-                <h4 style={{ color: 'white', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{col.title}</h4>
-                {col.links.map(function([label, href]) {
-                  return <Link key={label} href={href} style={{ display: 'block', color: 'rgba(255,255,255,0.55)', fontSize: 13, marginBottom: 10, textDecoration: 'none' }}>{label}</Link>
+              <div key={col.titolo}>
+                <p style={{ fontSize: 11, color: '#71717A', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 0.5 }}>{col.titolo}</p>
+                {col.links.map(function(l) {
+                  return (
+                    <Link key={l.label} href={l.href} style={{ display: 'block', fontSize: 12, color: '#D4D4D8', textDecoration: 'none', marginBottom: 9 }}>
+                      {l.label}
+                    </Link>
+                  )
                 })}
               </div>
             )
           })}
           <div>
-            <h4 style={{ color: 'white', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>Iscriviti alla newsletter</h4>
-            <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.4)', paddingBottom: 8, marginBottom: 24 }}>
-              <input type="email" placeholder="La tua email" value={emailFooter} onChange={e => setEmailFooter(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 13, flex: 1, outline: 'none', cursor: 'text' }} />
-              <button style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer' }}>Iscriviti</button>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'white', letterSpacing: -1, marginBottom: 16 }}>Klass</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {['📸', '🎵', '▶️', '💼'].map(function(icon, i) {
-                return <div key={i} style={{ width: 32, height: 32, borderRadius: 8, border: '0.5px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, cursor: 'pointer' }}>{icon}</div>
-              })}
+            <p style={{ fontSize: 11, color: '#71717A', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Newsletter</p>
+            <div style={{ display: 'flex', borderBottom: '0.5px solid #3F3F46', paddingBottom: 8, marginBottom: 16 }}>
+              <input
+                type="email"
+                placeholder="La tua email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                style={{ background: 'none', border: 'none', color: 'white', fontSize: 12, flex: 1, outline: 'none' }}
+              />
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <i className="ti ti-arrow-right" style={{ fontSize: 15, color: '#A1A1AA' }} />
+              </button>
             </div>
           </div>
         </div>
-        <div style={{ padding: '18px 0', textAlign: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>© 2026 Klass — Tutti i diritti riservati · <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Privacy</Link> · <Link href="/termini" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Termini</Link></p>
+        <div style={{ borderTop: '0.5px solid #3F3F46', padding: '18px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p style={{ fontSize: 11, color: '#71717A', margin: 0 }}>© 2026 klass — Tutti i diritti riservati</p>
+          <div style={{ display: 'flex', gap: 16 }}>
+            {['ti-brand-instagram', 'ti-brand-tiktok', 'ti-brand-youtube', 'ti-brand-linkedin'].map(function(icon) {
+              return <i key={icon} className={`ti ${icon}`} style={{ fontSize: 16, color: '#71717A', cursor: 'pointer' }} />
+            })}
+          </div>
         </div>
       </footer>
     </div>
