@@ -5,149 +5,172 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Layout from '@/app/components/Layout'
 
-type Impostazioni = {
-  font_grande: boolean
-  font_dislessia: boolean
-  interlinea: boolean
-  testo_semplificato: boolean
-  alto_contrasto: boolean
-  sfondo_crema: boolean
-  evidenzia_parole: boolean
-  dark_mode: boolean
-  modalita_focus: boolean
-  timer_pomodoro: boolean
-  istruzioni_passo: boolean
-  quiz_brevi: boolean
-  text_to_speech: boolean
-  righello: boolean
-  mappe_mentali: boolean
-}
-
-const DEFAULT: Impostazioni = {
-  font_grande: false, font_dislessia: false, interlinea: false, testo_semplificato: false,
-  alto_contrasto: false, sfondo_crema: false, evidenzia_parole: false, dark_mode: false,
-  modalita_focus: false, timer_pomodoro: false, istruzioni_passo: false, quiz_brevi: false,
-  text_to_speech: false, righello: false, mappe_mentali: false
-}
-
-const SEZIONI = [
-  {
-    titolo: 'Testo e leggibilità',
-    voci: [
-      { chiave: 'font_grande', label: 'Font più grande', desc: 'Testo 18px invece di 14px' },
-      { chiave: 'font_dislessia', label: 'Font per dislessia', desc: 'OpenDyslexic per leggere meglio' },
-      { chiave: 'interlinea', label: 'Interlinea aumentata', desc: 'Più spazio tra le righe' },
-      { chiave: 'testo_semplificato', label: 'Testo semplificato', desc: "L'AI usa parole più semplici" },
-    ]
-  },
-  {
-    titolo: 'Colori e contrasto',
-    voci: [
-      { chiave: 'alto_contrasto', label: 'Alto contrasto', desc: 'Testo più scuro su sfondo chiaro' },
-      { chiave: 'sfondo_crema', label: 'Sfondo crema', desc: 'Meno affaticamento visivo' },
-      { chiave: 'evidenzia_parole', label: 'Evidenzia parole chiave', desc: 'Sottolinea i concetti importanti' },
-      { chiave: 'dark_mode', label: 'Modalità scura', desc: 'Sfondo scuro per ridurre luce' },
-    ]
-  },
-  {
-    titolo: 'Concentrazione',
-    voci: [
-      { chiave: 'modalita_focus', label: 'Modalità focus', desc: 'Nascondi distrazioni visive' },
-      { chiave: 'timer_pomodoro', label: 'Timer Pomodoro', desc: '25 min studio, 5 min pausa' },
-      { chiave: 'istruzioni_passo', label: 'Istruzioni passo passo', desc: 'Una cosa alla volta' },
-      { chiave: 'quiz_brevi', label: 'Quiz più brevi', desc: 'Max 10 domande per sessione' },
-    ]
-  },
-  {
-    titolo: 'Audio e lettura',
-    voci: [
-      { chiave: 'text_to_speech', label: 'Leggi il testo ad alta voce', desc: 'Text-to-speech integrato' },
-      { chiave: 'righello', label: 'Righello di lettura', desc: 'Evidenzia la riga corrente' },
-      { chiave: 'mappe_mentali', label: 'Mappe mentali sempre', desc: 'Preferisci schemi visivi' },
-    ]
-  },
-]
-
-export default function Accessibilita() {
-  const [impostazioni, setImpostazioni] = useState<Impostazioni>(DEFAULT)
-  const [loading, setLoading] = useState(true)
-  const [salvando, setSalvando] = useState(false)
-  const [success, setSuccess] = useState(false)
+export default function Importa() {
+  const [tab, setTab] = useState('youtube')
+  const [userId, setUserId] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [risultato, setRisultato] = useState('')
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [testoRiassunto, setTestoRiassunto] = useState('')
   const router = useRouter()
 
   useEffect(() => {
     async function init() {
       const userData = await supabase.auth.getUser()
       if (!userData.data.user) { router.push('/login'); return }
-      const profilo = await supabase.from('profiles').select('accessibilita').eq('id', userData.data.user.id).single()
-      if (profilo.data?.accessibilita) setImpostazioni({ ...DEFAULT, ...profilo.data.accessibilita })
-      setLoading(false)
+      setUserId(userData.data.user.id)
     }
     init()
   }, [router])
 
-  function toggle(chiave: keyof Impostazioni) {
-    setImpostazioni(prev => ({ ...prev, [chiave]: !prev[chiave] }))
+  async function importaYoutube() {
+    if (!youtubeUrl) { setError('Inserisci un URL YouTube'); return }
+    setLoading(true); setError(''); setRisultato('')
+    try {
+      const res = await fetch('/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: youtubeUrl }) })
+      const data = await res.json()
+      if (data.testo) { setRisultato(data.testo) }
+      else { setError(data.error || 'Errore nel processare il video') }
+    } catch (e) { setError('Errore di connessione') }
+    setLoading(false)
   }
 
-  async function salva() {
-    setSalvando(true)
-    const userData = await supabase.auth.getUser()
-    if (!userData.data.user) return
-    await supabase.from('profiles').update({ accessibilita: impostazioni }).eq('id', userData.data.user.id)
-    setSuccess(true); setTimeout(() => setSuccess(false), 3000)
-    setSalvando(false)
+  async function importaFoto() {
+    if (!fotoFile) { setError('Seleziona una foto'); return }
+    setLoading(true); setError(''); setRisultato('')
+    try {
+      const reader = new FileReader()
+      reader.onload = async function(e) {
+        const base64 = (e.target?.result as string)?.split(',')[1]
+        const res = await fetch('/api/scansiona-foto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ immagine: base64, mimeType: fotoFile.type }) })
+        const data = await res.json()
+        if (data.testo) { setRisultato(data.testo) }
+        else { setError(data.error || 'Errore nella scansione') }
+        setLoading(false)
+      }
+      reader.readAsDataURL(fotoFile)
+    } catch (e) { setError('Errore di connessione'); setLoading(false) }
   }
 
-  if (loading) return <Layout><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}><p style={{ color: '#A1A1AA', fontSize: 13 }}>Caricamento...</p></div></Layout>
+  async function generaRiassunto() {
+    if (testoRiassunto.length < 50) { setError('Inserisci almeno 50 caratteri'); return }
+    setLoading(true); setError(''); setRisultato('')
+    try {
+      const res = await fetch('/api/generate-riassunto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testo: testoRiassunto }) })
+      const data = await res.json()
+      if (data.riassunto) { setRisultato(data.riassunto) }
+      else { setError(data.error || 'Errore nella generazione') }
+    } catch (e) { setError('Errore di connessione') }
+    setLoading(false)
+  }
+
+  function usaPerStudiare() {
+    sessionStorage.setItem('klass_testo_importato', risultato)
+    router.push('/studia')
+  }
+
+  const tabs = [
+    { id: 'youtube', icon: 'ti-brand-youtube', label: 'Da YouTube' },
+    { id: 'foto', icon: 'ti-camera', label: 'Scansiona foto' },
+    { id: 'riassunto', icon: 'ti-file-text', label: 'Riassunto AI' },
+  ]
+
+  const inputStyle = { width: '100%', border: '0.5px solid #E4E4E7', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', background: 'white' } as React.CSSProperties
 
   return (
     <Layout>
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 32px' }}>
-        <button onClick={() => router.push('/profilo-utente')} style={{ background: 'none', border: 'none', color: '#A1A1AA', fontSize: 13, cursor: 'pointer', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <i className="ti ti-arrow-left" style={{ fontSize: 14 }} />
-          Torna al profilo
-        </button>
-        <h1 style={{ fontSize: 24, fontWeight: 500, color: '#18181B', margin: '0 0 6px', letterSpacing: -0.5 }}>Modalità di studio personalizzata</h1>
-        <p style={{ fontSize: 13, color: '#71717A', margin: '0 0 28px' }}>Personalizza l&apos;esperienza in base alle tue esigenze</p>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 32px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 500, color: '#18181B', margin: '0 0 6px', letterSpacing: -0.5 }}>Importa contenuti</h1>
+        <p style={{ fontSize: 13, color: '#71717A', margin: '0 0 28px' }}>Trasforma qualsiasi contenuto in materiale di studio</p>
 
-        {success && <div style={{ background: '#F0FDF4', border: '0.5px solid #BBF7D0', borderRadius: 8, padding: '10px 14px', marginBottom: 20 }}><p style={{ fontSize: 13, color: '#15803D', margin: 0 }}>Impostazioni salvate</p></div>}
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
-          {SEZIONI.map(function(sezione) {
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24, borderBottom: '0.5px solid #F4F4F5' }}>
+          {tabs.map(function(t) {
             return (
-              <div key={sezione.titolo} style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 22 }}>
-                <p style={{ fontSize: 13, fontWeight: 500, color: '#18181B', margin: '0 0 14px' }}>{sezione.titolo}</p>
-                <div style={{ borderTop: '0.5px solid #F4F4F5' }}>
-                  {sezione.voci.map(function(v) {
-                    const attivo = impostazioni[v.chiave as keyof Impostazioni]
-                    return (
-                      <div key={v.chiave} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '0.5px solid #F4F4F5' }}>
-                        <div>
-                          <p style={{ fontSize: 13, color: '#18181B', margin: '0 0 1px' }}>{v.label}</p>
-                          <p style={{ fontSize: 11, color: '#A1A1AA', margin: 0 }}>{v.desc}</p>
-                        </div>
-                        <div onClick={() => toggle(v.chiave as keyof Impostazioni)} style={{ width: 40, height: 22, background: attivo ? '#18181B' : '#E4E4E7', borderRadius: 11, position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
-                          <div style={{ width: 18, height: 18, background: 'white', borderRadius: '50%', position: 'absolute', top: 2, left: attivo ? 20 : 2, transition: 'left 0.2s' }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+              <button key={t.id} onClick={() => { setTab(t.id); setRisultato(''); setError('') }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, cursor: 'pointer', background: 'transparent', color: tab === t.id ? '#18181B' : '#A1A1AA', fontWeight: tab === t.id ? 500 : 400, borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: tab === t.id ? '2px solid #18181B' : '2px solid transparent' }}>
+                <i className={`ti ${t.icon}`} style={{ fontSize: 15 }} />
+                {t.label}
+              </button>
             )
           })}
         </div>
 
-        <div style={{ background: '#EFF6FF', border: '0.5px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
-          <p style={{ fontSize: 12, color: '#185FA5', margin: 0, lineHeight: 1.6 }}>
-            Queste impostazioni vengono applicate automaticamente a tutta la piattaforma — quiz, flashcard e strumenti AI si adatteranno alle tue preferenze.
-          </p>
-        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: risultato ? '1fr 1fr' : '1fr', gap: 20 }}>
+          <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 24 }}>
+            {error && <div style={{ background: '#FFF8F6', border: '0.5px solid #FECACA', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}><p style={{ fontSize: 12, color: '#D85A30', margin: 0 }}>{error}</p></div>}
 
-        <button onClick={salva} disabled={salvando} style={{ background: '#18181B', color: 'white', border: 'none', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: salvando ? 0.7 : 1 }}>
-          {salvando ? 'Salvataggio...' : 'Salva impostazioni'}
-        </button>
+            {tab === 'youtube' && (
+              <>
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 6px' }}>Importa da YouTube</h2>
+                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px', lineHeight: 1.5 }}>Incolla il link di un video YouTube con i sottotitoli attivati</p>
+                <div style={{ background: '#FFFBEB', border: '0.5px solid #FDE68A', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                  <p style={{ fontSize: 12, color: '#B45309', margin: 0 }}>Funziona con video che hanno i sottotitoli abilitati (CC)</p>
+                </div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>URL del video</label>
+                <input type="text" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && importaYoutube()} style={{ ...inputStyle, marginBottom: 16 }} />
+                <button onClick={importaYoutube} disabled={loading || !youtubeUrl} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (loading || !youtubeUrl) ? 0.6 : 1 }}>
+                  {loading ? 'Elaborazione...' : 'Importa da YouTube'}
+                </button>
+              </>
+            )}
+
+            {tab === 'foto' && (
+              <>
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 6px' }}>Scansiona appunti scritti a mano</h2>
+                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px', lineHeight: 1.5 }}>Carica una foto dei tuoi appunti — l&apos;AI li digitalizza automaticamente</p>
+                <div style={{ background: '#EFF6FF', border: '0.5px solid #BFDBFE', borderRadius: 8, padding: '10px 12px', marginBottom: 16 }}>
+                  <p style={{ fontSize: 12, color: '#185FA5', margin: 0, lineHeight: 1.5 }}>Fotografia in buona luce · Un foglio alla volta per risultati migliori</p>
+                </div>
+                <div style={{ border: '0.5px dashed #E4E4E7', borderRadius: 10, padding: '24px', textAlign: 'center', background: '#FAFAFA', marginBottom: 16 }}>
+                  <i className="ti ti-camera" style={{ fontSize: 28, color: '#D4D4D8', display: 'block', marginBottom: 8 }} />
+                  <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 10px' }}>JPG, PNG, HEIC · max 10MB</p>
+                  <input type="file" accept="image/*" onChange={e => setFotoFile(e.target.files?.[0] || null)} style={{ fontSize: 12 }} />
+                  {fotoFile && <p style={{ fontSize: 12, color: '#15803D', marginTop: 8 }}>✓ {fotoFile.name}</p>}
+                </div>
+                <button onClick={importaFoto} disabled={loading || !fotoFile} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (loading || !fotoFile) ? 0.6 : 1 }}>
+                  {loading ? 'Scansione in corso...' : 'Scansiona appunti'}
+                </button>
+              </>
+            )}
+
+            {tab === 'riassunto' && (
+              <>
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 6px' }}>Genera riassunto AI</h2>
+                <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 16px', lineHeight: 1.5 }}>Incolla un testo lungo — l&apos;AI lo riassume con i punti chiave</p>
+                <label style={{ fontSize: 12, fontWeight: 500, color: '#18181B', display: 'block', marginBottom: 6 }}>Testo da riassumere</label>
+                <textarea placeholder="Incolla qui il testo..." value={testoRiassunto} onChange={e => setTestoRiassunto(e.target.value)} rows={10} style={{ ...inputStyle, resize: 'vertical', marginBottom: 8, lineHeight: 1.6 }} />
+                <p style={{ fontSize: 11, color: '#A1A1AA', margin: '0 0 16px' }}>{testoRiassunto.length} caratteri</p>
+                <button onClick={generaRiassunto} disabled={loading || testoRiassunto.length < 50} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', opacity: (loading || testoRiassunto.length < 50) ? 0.6 : 1 }}>
+                  {loading ? 'Generazione...' : 'Genera riassunto'}
+                </button>
+              </>
+            )}
+          </div>
+
+          {risultato && (
+            <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: 0 }}>Risultato</h3>
+                <span style={{ fontSize: 11, color: '#A1A1AA' }}>{risultato.length} caratteri</span>
+              </div>
+              <div style={{ background: '#FAFAFA', borderRadius: 8, padding: 14, maxHeight: 380, overflowY: 'auto', marginBottom: 14 }}>
+                <p style={{ fontSize: 12, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0 }}>{risultato}</p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button onClick={usaPerStudiare} style={{ width: '100%', background: '#18181B', color: 'white', border: 'none', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  Usa per studiare con AI
+                </button>
+                <button onClick={() => navigator.clipboard.writeText(risultato)} style={{ width: '100%', background: 'white', color: '#18181B', border: '0.5px solid #E4E4E7', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  Copia testo
+                </button>
+                <button onClick={() => { const blob = new Blob([risultato], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'klass_contenuto.txt'; a.click() }} style={{ width: '100%', background: 'white', color: '#18181B', border: '0.5px solid #E4E4E7', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  Scarica come file
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   )
