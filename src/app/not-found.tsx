@@ -1,23 +1,20 @@
-'use client'
-
 import Link from 'next/link'
 import Layout from '@/app/components/Layout'
 
 export default function NotFound() {
   return (
     <Layout>
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '80px 32px', textAlign: 'center' }}>
-        <div style={{ fontSize: 80, marginBottom: 16 }}>📚</div>
-        <h1 style={{ fontSize: 48, fontWeight: 700, background: 'linear-gradient(135deg,#185FA5,#7F77DD)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 8 }}>404</h1>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Pagina non trovata</h2>
-        <p style={{ fontSize: 15, color: '#6B7280', marginBottom: 32, lineHeight: 1.6 }}>
-          Sembra che questa pagina non esista — forse è stata spostata o l&apos;URL è sbagliato.
+      <div style={{ maxWidth: 500, margin: '0 auto', padding: '100px 32px', textAlign: 'center' }}>
+        <p style={{ fontSize: 72, fontWeight: 500, color: '#F4F4F5', margin: '0 0 0', letterSpacing: -2 }}>404</p>
+        <h1 style={{ fontSize: 22, fontWeight: 500, color: '#18181B', margin: '0 0 8px', letterSpacing: -0.5 }}>Pagina non trovata</h1>
+        <p style={{ fontSize: 13, color: '#71717A', margin: '0 0 32px', lineHeight: 1.6 }}>
+          Questa pagina non esiste o è stata spostata.
         </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/dashboard" style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <Link href="/dashboard" style={{ fontSize: 13, color: 'white', background: '#18181B', textDecoration: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 500 }}>
             Torna alla dashboard
           </Link>
-          <Link href="/esplora" style={{ background: 'white', color: '#185FA5', border: '0.5px solid #185FA5', padding: '12px 24px', borderRadius: 10, fontSize: 14, textDecoration: 'none' }}>
+          <Link href="/esplora" style={{ fontSize: 13, color: '#18181B', border: '0.5px solid #E4E4E7', textDecoration: 'none', padding: '10px 20px', borderRadius: 8 }}>
             Esplora appunti
           </Link>
         </div>
