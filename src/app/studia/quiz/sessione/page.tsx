@@ -22,25 +22,12 @@ export default function QuizSessione() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem('klass_quiz')
-    if (saved) {
-      const q = JSON.parse(saved)
-      setQuiz(q)
-      setRisposte(new Array(q.length).fill(-1))
-    } else {
-      router.push('/studia/quiz')
-    }
+    if (saved) { const q = JSON.parse(saved); setQuiz(q); setRisposte(new Array(q.length).fill(-1)) }
+    else { router.push('/studia/quiz') }
     setLoading(false)
   }, [router])
 
-  if (loading) return (
-    <Layout>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-        <p style={{ color: '#9CA3AF' }}>Caricamento quiz...</p>
-      </div>
-    </Layout>
-  )
-
-  if (quiz.length === 0) return null
+  if (loading || quiz.length === 0) return <Layout><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}><p style={{ color: '#A1A1AA', fontSize: 13 }}>Caricamento...</p></div></Layout>
 
   const domanda = quiz[indice]
   const haRisposto = risposte[indice] !== -1
@@ -50,117 +37,69 @@ export default function QuizSessione() {
 
   function rispondi(i: number) {
     if (haRisposto) return
-    const nuove = [...risposte]
-    nuove[indice] = i
-    setRisposte(nuove)
+    const nuove = [...risposte]; nuove[indice] = i; setRisposte(nuove)
   }
 
   async function prossima() {
-    if (indice < quiz.length - 1) {
-      setIndice(indice + 1)
-    } else {
+    if (indice < quiz.length - 1) { setIndice(indice + 1) }
+    else {
       const userData = await supabase.auth.getUser()
       if (userData.data.user) {
-        await fetch('/api/punti', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ utente_id: userData.data.user.id, azione: 'quiz_completato' })
-        })
+        await fetch('/api/punti', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ utente_id: userData.data.user.id, azione: 'quiz_completato' }) })
       }
       setMostrandoRisultato(true)
     }
   }
 
-  function precedente() {
-    if (indice > 0) setIndice(indice - 1)
-  }
-
   function riprovaErrori() {
     const quizErrori = quiz.filter((_, i) => risposte[i] !== quiz[i].risposta_corretta)
     sessionStorage.setItem('klass_quiz', JSON.stringify(quizErrori))
-    setQuiz(quizErrori)
-    setRisposte(new Array(quizErrori.length).fill(-1))
-    setIndice(0)
-    setMostrandoRisultato(false)
-  }
-
-  function emoji() {
-    if (punteggio >= 90) return '🏆'
-    if (punteggio >= 70) return '🎉'
-    if (punteggio >= 50) return '💪'
-    return '📚'
-  }
-
-  function messaggio() {
-    if (punteggio >= 90) return 'Eccellente! Conosci benissimo questo argomento.'
-    if (punteggio >= 70) return 'Ottimo risultato! Hai risposto bene alla maggior parte delle domande.'
-    if (punteggio >= 50) return 'Buon lavoro! Ripassa gli argomenti sbagliati per migliorare.'
-    return 'Continua a studiare — ripassa gli argomenti e riprova!'
+    setQuiz(quizErrori); setRisposte(new Array(quizErrori.length).fill(-1)); setIndice(0); setMostrandoRisultato(false)
   }
 
   if (mostrandoRisultato) {
     return (
       <Layout>
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 32px' }}>
-          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32, textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>{emoji()}</div>
-            <div style={{ fontSize: 56, fontWeight: 700, color: '#185FA5', marginBottom: 4 }}>{punteggio}%</div>
-            <p style={{ fontSize: 15, color: '#6B7280', marginBottom: 12 }}>{messaggio()}</p>
-            <div style={{ background: '#ECFDF5', border: '0.5px solid #A7F3D0', borderRadius: 10, padding: '10px 16px', marginBottom: 24, display: 'inline-block' }}>
-              <p style={{ fontSize: 13, color: '#059669' }}>🏆 Hai guadagnato <strong>20 punti</strong> per aver completato il quiz!</p>
+          <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 32, textAlign: 'center', marginBottom: 16 }}>
+            <p style={{ fontSize: 56, fontWeight: 500, color: '#18181B', margin: '0 0 4px', letterSpacing: -1 }}>{punteggio}%</p>
+            <p style={{ fontSize: 14, color: '#71717A', margin: '0 0 16px' }}>
+              {punteggio >= 90 ? 'Eccellente!' : punteggio >= 70 ? 'Ottimo risultato!' : punteggio >= 50 ? 'Buon lavoro!' : 'Continua a studiare!'}
+            </p>
+            <div style={{ background: '#F0FDF4', border: '0.5px solid #BBF7D0', borderRadius: 8, padding: '10px 16px', display: 'inline-block', marginBottom: 24 }}>
+              <p style={{ fontSize: 12, color: '#15803D', margin: 0 }}>Hai guadagnato <strong>20 punti</strong></p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
-              {[
-                { num: corrette, label: '✅ Corrette', color: '#059669' },
-                { num: errate, label: '❌ Errate', color: '#DC2626' },
-                { num: quiz.length - corrette - errate, label: '⏭ Saltate', color: '#B45309' },
-              ].map(s => (
-                <div key={s.label} style={{ background: '#f9fafb', borderRadius: 10, padding: 14 }}>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: s.color, marginBottom: 2 }}>{s.num}</div>
-                  <div style={{ fontSize: 11, color: '#9CA3AF' }}>{s.label}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
+              {[{ num: corrette, label: 'Corrette', color: '#15803D' }, { num: errate, label: 'Errate', color: '#DC2626' }, { num: quiz.length - corrette - errate, label: 'Saltate', color: '#B45309' }].map(s => (
+                <div key={s.label} style={{ background: '#FAFAFA', borderRadius: 8, padding: 12 }}>
+                  <p style={{ fontSize: 22, fontWeight: 500, color: s.color, margin: '0 0 2px' }}>{s.num}</p>
+                  <p style={{ fontSize: 11, color: '#A1A1AA', margin: 0 }}>{s.label}</p>
                 </div>
               ))}
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {errate > 0 && (
-                <button onClick={riprovaErrori} style={{ background: '#FFFBEB', color: '#B45309', border: '0.5px solid #FDE68A', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  🔁 Riprova gli errori ({errate})
-                </button>
-              )}
-              <button onClick={() => router.push('/punti')} style={{ background: '#ECFDF5', color: '#059669', border: '0.5px solid #A7F3D0', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                🏆 Vedi i miei punti
-              </button>
-              <button onClick={() => router.push('/studia/quiz')} style={{ background: 'linear-gradient(135deg,#185FA5,#7F77DD)', color: 'white', border: 'none', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Nuovo quiz
-              </button>
-              <button onClick={() => router.push('/studia')} style={{ background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: '11px 20px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
-                Torna alla home
-              </button>
+              {errate > 0 && <button onClick={riprovaErrori} style={{ fontSize: 13, background: '#FFFBEB', color: '#B45309', border: '0.5px solid #FDE68A', padding: '10px 18px', borderRadius: 8, cursor: 'pointer' }}>Riprova errori ({errate})</button>}
+              <button onClick={() => router.push('/punti')} style={{ fontSize: 13, background: '#F0FDF4', color: '#15803D', border: '0.5px solid #BBF7D0', padding: '10px 18px', borderRadius: 8, cursor: 'pointer' }}>Vedi punti</button>
+              <button onClick={() => router.push('/studia/quiz')} style={{ fontSize: 13, background: '#18181B', color: 'white', border: 'none', padding: '10px 18px', borderRadius: 8, cursor: 'pointer', fontWeight: 500 }}>Nuovo quiz</button>
             </div>
           </div>
-
-          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }}>Riepilogo domande</h3>
-            {quiz.map((d, i) => {
-              const corretta = risposte[i] === d.risposta_corretta
-              const risposta = risposte[i]
-              return (
-                <div key={i} style={{ padding: '12px 0', borderBottom: i < quiz.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 14 }}>{corretta ? '✅' : '❌'}</span>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', marginBottom: 4 }}>{i + 1}. {d.domanda}</p>
-                      {risposta !== -1 && !corretta && (
-                        <p style={{ fontSize: 12, color: '#DC2626', marginBottom: 2 }}>Tua risposta: {d.opzioni[risposta]}</p>
-                      )}
-                      {!corretta && (
-                        <p style={{ fontSize: 12, color: '#059669' }}>Risposta corretta: {d.opzioni[d.risposta_corretta]}</p>
-                      )}
+          <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 22 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: '#18181B', margin: '0 0 14px' }}>Riepilogo</h3>
+            <div style={{ borderTop: '0.5px solid #F4F4F5' }}>
+              {quiz.map(function(d, i) {
+                const corretta = risposte[i] === d.risposta_corretta
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 10, padding: '12px 0', borderBottom: '0.5px solid #F4F4F5', alignItems: 'flex-start' }}>
+                    <i className={`ti ${corretta ? 'ti-circle-check' : 'ti-circle-x'}`} style={{ fontSize: 16, color: corretta ? '#15803D' : '#DC2626', flexShrink: 0, marginTop: 1 }} />
+                    <div>
+                      <p style={{ fontSize: 13, color: '#18181B', margin: '0 0 2px' }}>{d.domanda}</p>
+                      {!corretta && risposte[i] !== -1 && <p style={{ fontSize: 12, color: '#DC2626', margin: '0 0 2px' }}>Tua: {d.opzioni[risposte[i]]}</p>}
+                      {!corretta && <p style={{ fontSize: 12, color: '#15803D', margin: 0 }}>Corretta: {d.opzioni[d.risposta_corretta]}</p>}
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       </Layout>
@@ -170,30 +109,25 @@ export default function QuizSessione() {
   return (
     <Layout>
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontSize: 13, color: '#6B7280' }}>Domanda {indice + 1} di {quiz.length}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#185FA5' }}>✅ {corrette} corrette · ❌ {errate} errate</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: 13, color: '#71717A' }}>Domanda {indice + 1} di {quiz.length}</span>
+          <span style={{ fontSize: 13, color: '#18181B', fontWeight: 500 }}>{corrette} corrette · {errate} errate</span>
         </div>
-
-        <div style={{ background: '#f3f4f6', borderRadius: 20, height: 6, marginBottom: 28 }}>
-          <div style={{ height: 6, borderRadius: 20, background: 'linear-gradient(90deg,#185FA5,#7F77DD)', width: `${((indice + 1) / quiz.length) * 100}%`, transition: 'width 0.3s' }} />
+        <div style={{ background: '#F4F4F5', borderRadius: 20, height: 4, marginBottom: 24 }}>
+          <div style={{ height: 4, borderRadius: 20, background: '#18181B', width: `${((indice + 1) / quiz.length) * 100}%`, transition: 'width 0.3s' }} />
         </div>
-
-        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 28, marginBottom: 16 }}>
-          <span style={{ fontSize: 11, background: '#EFF6FF', color: '#185FA5', padding: '3px 10px', borderRadius: 20, display: 'inline-block', marginBottom: 14 }}>Risposta multipla</span>
-          <p style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 20, lineHeight: 1.5 }}>{domanda.domanda}</p>
-
+        <div style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 14, padding: 24, marginBottom: 14 }}>
+          <p style={{ fontSize: 15, fontWeight: 500, color: '#18181B', margin: '0 0 20px', lineHeight: 1.5 }}>{domanda.domanda}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {domanda.opzioni.map((opzione, i) => {
+            {domanda.opzioni.map(function(opzione, i) {
               const selezionata = risposte[indice] === i
               const corretta = domanda.risposta_corretta === i
-              let bg = 'white', border = '0.5px solid #e5e7eb', color = '#374151'
-              let letterBg = '#f3f4f6', letterColor = '#6B7280'
-              if (haRisposto && corretta) { bg = '#ECFDF5'; border = '1px solid #059669'; color = '#065F46'; letterBg = '#059669'; letterColor = 'white' }
-              else if (haRisposto && selezionata && !corretta) { bg = '#FEF2F2'; border = '1px solid #DC2626'; color = '#991B1B'; letterBg = '#DC2626'; letterColor = 'white' }
+              let bg = 'white', borderColor = '#E4E4E7', color = '#374151'
+              if (haRisposto && corretta) { bg = '#F0FDF4'; borderColor = '#15803D'; color = '#15803D' }
+              else if (haRisposto && selezionata && !corretta) { bg = '#FEF2F2'; borderColor = '#DC2626'; color = '#DC2626' }
               return (
-                <button key={i} onClick={() => rispondi(i)} style={{ width: '100%', textAlign: 'left', border, borderRadius: 10, padding: '13px 16px', fontSize: 14, cursor: haRisposto ? 'default' : 'pointer', background: bg, color, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: letterBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: letterColor, flexShrink: 0 }}>
+                <button key={i} onClick={() => rispondi(i)} style={{ width: '100%', textAlign: 'left', border: `0.5px solid ${borderColor}`, borderRadius: 8, padding: '12px 16px', fontSize: 13, cursor: haRisposto ? 'default' : 'pointer', background: bg, color, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 6, background: haRisposto && corretta ? '#15803D' : haRisposto && selezionata && !corretta ? '#DC2626' : '#F4F4F5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: haRisposto && (corretta || (selezionata && !corretta)) ? 'white' : '#71717A', flexShrink: 0 }}>
                     {['A','B','C','D'][i]}
                   </div>
                   {opzione}
@@ -201,23 +135,18 @@ export default function QuizSessione() {
               )
             })}
           </div>
-
           {haRisposto && (
-            <div style={{ background: '#f9fafb', borderRadius: 10, padding: '14px 16px', marginTop: 16, borderLeft: '3px solid #185FA5' }}>
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>💡 {domanda.spiegazione}</p>
+            <div style={{ background: '#FAFAFA', borderRadius: 8, padding: '12px 14px', marginTop: 14, borderLeft: '3px solid #18181B' }}>
+              <p style={{ fontSize: 12, color: '#71717A', lineHeight: 1.6, margin: 0 }}>{domanda.spiegazione}</p>
             </div>
           )}
         </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={precedente} disabled={indice === 0} style={{ background: 'white', border: '0.5px solid #e5e7eb', padding: '11px 20px', borderRadius: 8, fontSize: 13, cursor: indice === 0 ? 'default' : 'pointer', color: '#374151', opacity: indice === 0 ? 0.4 : 1 }}>
-            ← Precedente
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <button onClick={() => indice > 0 && setIndice(indice - 1)} disabled={indice === 0} style={{ background: 'white', border: '0.5px solid #E4E4E7', padding: '10px 18px', borderRadius: 8, fontSize: 13, cursor: indice === 0 ? 'default' : 'pointer', color: '#71717A', opacity: indice === 0 ? 0.4 : 1 }}>
+            Precedente
           </button>
-          <span style={{ fontSize: 12, color: '#9CA3AF' }}>
-            {haRisposto ? (indice < quiz.length - 1 ? 'Vai alla prossima' : 'Vedi risultati') : 'Seleziona una risposta'}
-          </span>
-          <button onClick={prossima} disabled={!haRisposto} style={{ background: haRisposto ? 'linear-gradient(135deg,#185FA5,#7F77DD)' : '#f3f4f6', border: 'none', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: haRisposto ? 'pointer' : 'default', color: haRisposto ? 'white' : '#9CA3AF' }}>
-            {indice < quiz.length - 1 ? 'Prossima →' : 'Vedi risultati →'}
+          <button onClick={prossima} disabled={!haRisposto} style={{ background: haRisposto ? '#18181B' : '#F4F4F5', border: 'none', padding: '10px 22px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: haRisposto ? 'pointer' : 'default', color: haRisposto ? 'white' : '#A1A1AA' }}>
+            {indice < quiz.length - 1 ? 'Prossima' : 'Risultati'}
           </button>
         </div>
       </div>
