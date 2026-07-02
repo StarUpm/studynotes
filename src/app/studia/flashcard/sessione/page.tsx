@@ -2,235 +2,93 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import Layout from '@/app/components/Layout'
 
-type Flashcard = {
-  fronte: string
-  retro: string
-}
+type Flashcard = { fronte: string; retro: string }
 
 export default function FlashcardSessione() {
-  const [carte, setCarte] = useState<Flashcard[]>([])
+  const [cards, setCards] = useState<Flashcard[]>([])
   const [indice, setIndice] = useState(0)
   const [girata, setGirata] = useState(false)
-  const [stati, setStati] = useState<string[]>([])
-  const [mostraRisultato, setMostraRisultato] = useState(false)
+  const [completate, setCompletate] = useState<boolean[]>([])
+  const [fine, setFine] = useState(false)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  useEffect(function() {
+  useEffect(() => {
     const saved = sessionStorage.getItem('klass_flashcard')
-    if (saved) {
-      const c = JSON.parse(saved)
-      setCarte(c)
-      setStati(new Array(c.length).fill(''))
-    } else {
-      router.push('/studia/flashcard')
-    }
+    if (saved) { const c = JSON.parse(saved); setCards(c); setCompletate(new Array(c.length).fill(false)) }
+    else { router.push('/studia/flashcard') }
     setLoading(false)
   }, [router])
 
-  if (loading) {
-    return (
-      <Layout>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-          <p style={{ color: '#9CA3AF' }}>Caricamento flashcard...</p>
-        </div>
-      </Layout>
-    )
-  }
-
-  if (carte.length === 0) return null
-
-  const carta = carte[indice]
-  const sapevo = stati.filter(function(s) { return s === 'sapevo' }).length
-  const nonSapevo = stati.filter(function(s) { return s === 'nonsapevo' }).length
-  const quasi = stati.filter(function(s) { return s === 'quasi' }).length
-  const completate = stati.filter(function(s) { return s !== '' }).length
-
-  function segna(stato: string) {
-    const nuovi = [...stati]
-    nuovi[indice] = stato
-    setStati(nuovi)
-    setGirata(false)
-    if (indice < carte.length - 1) {
-      setTimeout(function() { setIndice(function(p) { return p + 1 }) }, 300)
-    } else {
-      setTimeout(function() { setMostraRisultato(true) }, 300)
+  async function segnaEAvanza(sapevo: boolean) {
+    const nuove = [...completate]; nuove[indice] = sapevo; setCompletate(nuove)
+    if (indice < cards.length - 1) { setIndice(indice + 1); setGirata(false) }
+    else {
+      const userData = await supabase.auth.getUser()
+      if (userData.data.user) {
+        await fetch('/api/punti', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ utente_id: userData.data.user.id, azione: 'flashcard_completata' }) })
+      }
+      setFine(true)
     }
   }
 
-  function ripassaDifficili() {
-    const difficili = carte.filter(function(_, i) {
-      return stati[i] === 'nonsapevo' || stati[i] === 'quasi'
-    })
-    sessionStorage.setItem('klass_flashcard', JSON.stringify(difficili))
-    setCarte(difficili)
-    setStati(new Array(difficili.length).fill(''))
-    setIndice(0)
-    setGirata(false)
-    setMostraRisultato(false)
-  }
+  if (loading || cards.length === 0) return <Layout><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}><p style={{ color: '#A1A1AA', fontSize: 13 }}>Caricamento...</p></div></Layout>
 
-  function coloreStato(s: string) {
-    if (s === 'sapevo') return { bg: '#ECFDF5', border: '#A7F3D0', text: '✅ Sapevo' }
-    if (s === 'nonsapevo') return { bg: '#FEF2F2', border: '#FECACA', text: '❌ Non sapevo' }
-    if (s === 'quasi') return { bg: '#FFFBEB', border: '#FDE68A', text: '😐 Quasi' }
-    return { bg: '#f9fafb', border: '#e5e7eb', text: '⏳ Da fare' }
-  }
+  const sapevo = completate.filter(Boolean).length
+  const nonSapevo = completate.filter((c, i) => i < indice && !c).length
 
-  if (mostraRisultato) {
+  if (fine) {
     return (
       <Layout>
-        <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 32px' }}>
-          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 32, textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🃏</div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 20 }}>Sessione completata!</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
-              {[
-                { num: sapevo, label: '✅ Sapevo', color: '#059669' },
-                { num: nonSapevo, label: '❌ Non sapevo', color: '#DC2626' },
-                { num: quasi, label: '😐 Quasi', color: '#B45309' },
-              ].map(function(s) {
-                return (
-                  <div key={s.label} style={{ background: '#f9fafb', borderRadius: 10, padding: 14 }}>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, marginBottom: 2 }}>{s.num}</div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>{s.label}</div>
-                  </div>
-                )
-              })}
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {(nonSapevo + quasi) > 0 && (
-                <button
-                  onClick={ripassaDifficili}
-                  style={{ background: '#FFFBEB', color: '#B45309', border: '0.5px solid #FDE68A', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                >
-                  🔁 Ripassa le difficili ({nonSapevo + quasi})
-                </button>
-              )}
-              <button
-                onClick={function() { router.push('/studia/flashcard') }}
-                style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)', color: 'white', border: 'none', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-              >
-                Nuova sessione
+        <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 32px', textAlign: 'center' }}>
+          <p style={{ fontSize: 48, fontWeight: 500, color: '#18181B', margin: '0 0 8px', letterSpacing: -1 }}>{Math.round((sapevo / cards.length) * 100)}%</p>
+          <p style={{ fontSize: 14, color: '#71717A', margin: '0 0 24px' }}>
+            {sapevo} su {cards.length} flashcard — Hai guadagnato 15 punti!
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+            {nonSapevo > 0 && (
+              <button onClick={() => { const difficili = cards.filter((_, i) => !completate[i]); sessionStorage.setItem('klass_flashcard', JSON.stringify(difficili)); setCards(difficili); setCompletate(new Array(difficili.length).fill(false)); setIndice(0); setGirata(false); setFine(false) }} style={{ fontSize: 13, background: '#FFFBEB', color: '#B45309', border: '0.5px solid #FDE68A', padding: '10px 18px', borderRadius: 8, cursor: 'pointer' }}>
+                Riprova difficili ({nonSapevo})
               </button>
-              <button
-                onClick={function() { router.push('/studia') }}
-                style={{ background: 'white', color: '#374151', border: '0.5px solid #e5e7eb', padding: '11px 20px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-              >
-                Torna alla home
-              </button>
-            </div>
-          </div>
-
-          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }}>Tutte le flashcard</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-              {carte.map(function(c, i) {
-                const s = coloreStato(stati[i])
-                return (
-                  <div key={i} style={{ background: s.bg, border: `0.5px solid ${s.border}`, borderRadius: 10, padding: 14 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: '#111827', marginBottom: 6 }}>{c.fronte}</p>
-                    <p style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.5, marginBottom: 8 }}>{c.retro}</p>
-                    <span style={{ fontSize: 10, color: '#6B7280' }}>{s.text}</span>
-                  </div>
-                )
-              })}
-            </div>
+            )}
+            <button onClick={() => router.push('/studia/flashcard')} style={{ fontSize: 13, background: '#18181B', color: 'white', border: 'none', padding: '10px 18px', borderRadius: 8, cursor: 'pointer', fontWeight: 500 }}>
+              Nuove flashcard
+            </button>
           </div>
         </div>
       </Layout>
     )
   }
 
+  const card = cards[indice]
   return (
     <Layout>
-      <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontSize: 13, color: '#6B7280' }}>Carta {indice + 1} di {carte.length}</span>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#059669' }}>✅ {sapevo}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#DC2626' }}>❌ {nonSapevo}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#B45309' }}>😐 {quasi}</span>
-          </div>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 13, color: '#71717A' }}>{indice + 1} / {cards.length}</span>
+          <span style={{ fontSize: 13, color: '#18181B' }}>{sapevo} sapevo · {nonSapevo} ripassare</span>
         </div>
-
-        <div style={{ background: '#f3f4f6', borderRadius: 20, height: 6, marginBottom: 28 }}>
-          <div style={{ height: 6, borderRadius: 20, background: 'linear-gradient(90deg,#534AB7,#7F77DD)', width: `${(completate / carte.length) * 100}%`, transition: 'width 0.3s' }} />
+        <div style={{ background: '#F4F4F5', borderRadius: 20, height: 4, marginBottom: 28 }}>
+          <div style={{ height: 4, borderRadius: 20, background: '#18181B', width: `${((indice) / cards.length) * 100}%` }} />
         </div>
-
-        <div
-          onClick={function() { setGirata(function(prev) { return !prev }) }}
-          style={{
-            background: girata ? 'linear-gradient(135deg,#534AB7,#7F77DD)' : 'white',
-            border: girata ? 'none' : '0.5px solid #e5e7eb',
-            borderRadius: 20,
-            minHeight: 220,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            padding: '40px 32px',
-            cursor: 'pointer',
-            marginBottom: 24,
-            position: 'relative',
-            transition: 'background 0.3s'
-          }}
-        >
-          <span style={{ position: 'absolute', top: 16, left: 20, fontSize: 11, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: girata ? 'rgba(255,255,255,0.6)' : '#9CA3AF' }}>
-            {girata ? 'Retro — risposta' : 'Fronte — clicca per girare'}
-          </span>
-          <p style={{ fontSize: girata ? 16 : 22, fontWeight: girata ? 400 : 700, color: girata ? 'white' : '#111827', lineHeight: 1.6 }}>
-            {girata ? carta.retro : carta.fronte}
-          </p>
-          {!girata && <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 16 }}>Tocca la carta per vedere la risposta</p>}
+        <div onClick={() => setGirata(!girata)} style={{ background: 'white', border: '0.5px solid #E4E4E7', borderRadius: 16, padding: '48px 32px', textAlign: 'center', cursor: 'pointer', minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <p style={{ fontSize: 11, color: '#A1A1AA', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 0.5 }}>{girata ? 'Risposta' : 'Domanda'}</p>
+          <p style={{ fontSize: 18, fontWeight: 500, color: '#18181B', margin: 0, lineHeight: 1.5 }}>{girata ? card.retro : card.fronte}</p>
+          {!girata && <p style={{ fontSize: 12, color: '#D85A30', margin: '16px 0 0' }}>Clicca per vedere la risposta</p>}
         </div>
-
         {girata && (
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 24 }}>
-            <button onClick={function() { segna('nonsapevo') }} style={{ padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', background: '#FEF2F2', color: '#DC2626' }}>
-              ❌ Non sapevo
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button onClick={() => segnaEAvanza(false)} style={{ background: '#FEF2F2', color: '#DC2626', border: '0.5px solid #FECACA', padding: '14px', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+              Non sapevo
             </button>
-            <button onClick={function() { segna('quasi') }} style={{ padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', background: '#FFFBEB', color: '#B45309' }}>
-              😐 Quasi
-            </button>
-            <button onClick={function() { segna('sapevo') }} style={{ padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', background: '#ECFDF5', color: '#059669' }}>
-              ✅ Sapevo
+            <button onClick={() => segnaEAvanza(true)} style={{ background: '#F0FDF4', color: '#15803D', border: '0.5px solid #BBF7D0', padding: '14px', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+              Sapevo
             </button>
           </div>
         )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            onClick={function() { if (indice > 0) { setIndice(function(p) { return p - 1 }); setGirata(false) } }}
-            disabled={indice === 0}
-            style={{ background: 'white', border: '0.5px solid #e5e7eb', padding: '10px 20px', borderRadius: 8, fontSize: 13, cursor: indice === 0 ? 'default' : 'pointer', color: '#374151', opacity: indice === 0 ? 0.4 : 1 }}
-          >
-            ← Precedente
-          </button>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {carte.slice(Math.max(0, indice - 4), Math.min(carte.length, indice + 5)).map(function(_, i) {
-              const realI = Math.max(0, indice - 4) + i
-              const s = stati[realI]
-              let bg = '#e5e7eb'
-              if (realI === indice) bg = '#534AB7'
-              else if (s === 'sapevo') bg = '#059669'
-              else if (s === 'nonsapevo') bg = '#DC2626'
-              else if (s === 'quasi') bg = '#B45309'
-              return (
-                <div key={realI} style={{ width: realI === indice ? 20 : 8, height: 8, borderRadius: 4, background: bg, transition: 'all 0.2s' }} />
-              )
-            })}
-          </div>
-          <button
-            onClick={function() { if (!girata) setGirata(true) }}
-            style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)', border: 'none', padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'white' }}
-          >
-            Gira →
-          </button>
-        </div>
       </div>
     </Layout>
   )
